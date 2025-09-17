@@ -174,3 +174,30 @@ input[type="number"]:focus {
 .backupbtn {
     margin: 10px 0 0 30px;
 }
+/* 移动端适配，防止溢出 */
+@media (max-width: 600px) {
+    #tab-container {
+        flex-direction: column;
+        margin-top: 10px;
+    }
+    #tab-nav {
+        width: 100%;
+        margin: 0 0 10px 0;
+        padding: 10px;
+        border-radius: 10px;
+    }
+    #tab-content {
+        padding: 10px 10px 20px;
+        border-radius: 10px;
+    }
+    .icon-list {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 8px;
+    }
+    .icon-item {
+        padding: 6px;
+    }
+    .tab-pane {
+        min-height: 400px;
+    }
+}
