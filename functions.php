@@ -478,24 +478,30 @@ function art_count ($cid){
 function dengji($i) {
     $db = Typecho_Db::get();
     $adminAuthorId = 1;
-    
+
     // 如果邮箱为空，使用站长邮箱
     if (empty($i)) {
         $admin = $db->fetchRow($db->select('mail')->from('table.users')->where('uid = ?', $adminAuthorId));
-        $i = $admin['mail'];
+        $i = $admin ? $admin['mail'] : null;
     }
-    
+
+    // 检查邮箱是否获取成功
+    if (empty($i)) {
+        echo '<span class="level">Lv.1</span>';
+        return;
+    }
+
     $author = $db->fetchRow($db->select('authorId')->from('table.comments')->where('mail = ?', $i)->limit(1));
-    $authorId = $author['authorId'];
-    
+    $authorId = $author ? $author['authorId'] : null;
+
     if ($authorId == $adminAuthorId) {
         echo '<span class="level owner">博主</span>';
         return;
     }
-    
+
     $mail = $db->fetchRow($db->select(array('COUNT(cid)' => 'rbq'))->from('table.comments')->where('mail = ?', $i)->where('authorId = ?', '0'));
-    $rbq = $mail['rbq'];
-    
+    $rbq = $mail ? $mail['rbq'] : 0; // 如果没有评论就是0
+
     if ($rbq < 3) {
         echo '<span class="level">Lv.1</span>';
     } elseif ($rbq < 10) {
