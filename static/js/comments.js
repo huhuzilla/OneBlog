@@ -1,5 +1,5 @@
 /**
- * Updated: 2025-07-26
+ * Updated: 2025-10-09
  * Author: ©彼岸临窗 oneblog.net
  *
  * 注释含命名规范，开源不易，如需引用请注明来源:彼岸临窗 https://oneblog.net。
@@ -129,5 +129,102 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelector('.cancel-comment-reply a')?.addEventListener('click', function() {
         document.getElementById('reply-title').style.display = 'none';
         document.getElementById('default-title').style.display = '';
+    });
+});
+
+//极验验证
+document.addEventListener('DOMContentLoaded', function () {
+    var commentList = document.querySelector('.comment-list');
+    if (!commentList) return;
+    
+    var captchaIdInput = document.getElementById('geetest-captcha-id');
+    var submitBtn = document.getElementById('geetest-submit-btn');
+    var commentForm = document.getElementById('comment-form');
+    if (!submitBtn || !commentForm) return;
+
+    var authorInput = commentForm.querySelector('input[name="author"]');
+    var mailInput = commentForm.querySelector('input[name="mail"]');
+    var textarea = document.getElementById('textarea');
+    var richEditor = document.getElementById('rich-editor');
+    var isLoggedIn = !(authorInput && mailInput);
+
+    // 只要极验ID有值就启用极验，否则直接提交
+    var geetestEnabled = captchaIdInput && captchaIdInput.value;
+    var gtReady = false;
+    var captchaObj = null;
+
+    if (!isLoggedIn && geetestEnabled) {
+        window.initGeetest4({
+            captchaId: captchaIdInput.value,
+            product: 'bind',
+            riskType: 'slide',
+            hideSuccess: true // 关键：关闭验证成功弹窗
+        }, function (obj) {
+            captchaObj = obj;
+            obj.onReady(function () { gtReady = true; });
+            obj.onSuccess(function () {
+                var result = obj.getValidate();
+                ['lot_number', 'captcha_output', 'pass_token', 'gen_time'].forEach(function (k) {
+                    var input = commentForm.querySelector('[name="' + k + '"]');
+                    if (!input) {
+                        input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = k;
+                        commentForm.appendChild(input);
+                    }
+                    input.value = result[k];
+                });
+                commentForm.submit();
+            });
+        });
+    }
+
+    submitBtn.addEventListener('click', function (e) {
+        if (richEditor && textarea) textarea.value = richEditor.innerHTML.trim();
+        e.preventDefault();
+
+        // 已登录用户，内容校验后直接提交
+        if (isLoggedIn) {
+            if (!textarea.value.trim()) {
+                layer && layer.msg ? layer.msg('评论内容不能为空') : alert('评论内容不能为空');
+                return false;
+            }
+            commentForm.submit();
+            return false;
+        }
+
+        // 未登录用户，先校验基本字段
+        var author = authorInput ? authorInput.value.trim() : "";
+        var mail = mailInput ? mailInput.value.trim() : "";
+        var text = textarea.value.trim();
+        if (!author) {
+            layer && layer.msg ? layer.msg('昵称不能为空') : alert('昵称不能为空');
+            if (authorInput) authorInput.focus();
+            return false;
+        }
+        if (!/^[\w\.-]+@[\w\.-]+\.\w+$/.test(mail)) {
+            layer && layer.msg ? layer.msg('请填写正确的邮箱') : alert('请填写正确的邮箱');
+            if (mailInput) mailInput.focus();
+            return false;
+        }
+        if (!text) {
+            layer && layer.msg ? layer.msg('评论内容不能为空') : alert('评论内容不能为空');
+            if (richEditor) richEditor.focus();
+            return false;
+        }
+
+        // 启用极验时，弹窗验证
+        if (geetestEnabled) {
+            if (captchaObj && gtReady) {
+                captchaObj.showCaptcha();
+            } else {
+                layer && layer.msg ? layer.msg('极验服务加载中，请稍候重试') : alert('极验服务加载中，请稍候重试');
+            }
+            return false;
+        }
+
+        // 未启用极验，直接提交
+        commentForm.submit();
+        return false;
     });
 });

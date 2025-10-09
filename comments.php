@@ -29,6 +29,10 @@
             </div>
         </div>
     <?php endif; ?>
+    
+    <?php if ($this->options->GeetestID): ?>
+    <input type="hidden" id="geetest-captcha-id" value="<?php echo htmlspecialchars($this->options->GeetestID); ?>" />
+    <?php endif; ?>
     <!-- 隐藏的textarea，实际提交用 -->
     <textarea name="text" id="textarea" style="display:none;" required></textarea>
     <!-- 可编辑div，表情预览和输入都在这里 -->
@@ -47,7 +51,7 @@
                 </div>
             </div>
         </div>
-        <button type="submit" class="submit"><?php _e('提交审核'); ?></button>
+        <button type="submit" class="submit" id="geetest-submit-btn"><?php _e('提交审核'); ?></button>
     </div>
     </form>
 </div>

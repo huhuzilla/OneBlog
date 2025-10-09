@@ -1,7 +1,7 @@
 <?php if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 /**
  * Theme：OneBlog
- * Updated: 2025-07-26
+ * Updated: 2025-10-09
  * Author: ©彼岸临窗 oneblog.net
  * 注释含命名规范，开源不易，如需引用请注明来源:彼岸临窗 https://oneblog.net。
  * 本主题已取得软件著作权（登记号：2025SR0334142）和外观设计专利（专利号：第7121519号），请严格遵循GPL-2.0协议使用本主题及源码。
@@ -76,8 +76,8 @@ function themeConfig($form) {
             <div id="tab1" class="tab-pane active">
                 <h2>OneBlog V<?php echo parseThemeVersion();?></h2>
                 <p>本主题精心打磨多年，且持续优化，现免费开源，致敬互联网社区开源精神，也致敬热爱生活和记录的我们。</p>
-                <p>主题安装教程请前往<b></b>主题文档</b>：<a href="https://docs.oneblog.net" target="_blank">docs.oneblog.net</a> 获取，</a>主题最新版本请前往Github仓库：<a href="https://github.com/LawyerLu/OneBlog" target="_blank">OneBlog</a> 或 <a href="https://gitcode.com/LawyerLu/OneBlog" target="_blank">国内镜像仓库</a>查看，记得★Star，既是对作者的支持，也方便记住来时的路。</p>
-                <p>本主题目前仅有QQ交流群：<b>939170079</b>，其他均不是官方群组。</p>
+                <p>使用教程请前往<b></b>主题文档</b>：<a href="https://docs.oneblog.net" target="_blank">docs.oneblog.net</a> 获取，</a>主题最新版本请前往Github仓库：<a href="https://github.com/LawyerLu/OneBlog" target="_blank">OneBlog（最新）</a> 或 <a href="https://gitcode.com/LawyerLu/OneBlog" target="_blank">国内镜像仓库（延迟一天同步）</a>查看，记得★Star，既是对作者的支持，也方便记住来时的路。本主题几乎所有代码都清晰地注释了，因此博友们完全可以以OneBlog为基础二次开发或单独开发属于自己的主题，但希望大家注明来源，保留基本的版权信息。</p>
+                <p>本主题目前仅有QQ交流群：<b>939170079</b>，其他均不是官方群组，此外，还可以通过<a href="https://litebbs.com" target="_blank">LiteBBS</a>讨论交流。本主题的介绍、后续的更新或周边插件的开发更新，除了QQ群公告，还会同步发布在<a href="https://litebbs.com" target="_blank">LiteBBS</a>，欢迎大家参与讨论。</p>
                 <div class="backup">
                     <div class="backup-listen">
                         <b>主题设置备份与恢复：</b>
@@ -164,8 +164,15 @@ function themeConfig($form) {
     
     // 随机高清文艺图片源
     $RandomIMG = new Typecho_Widget_Helper_Form_Element_Radio('RandomIMG', array('oneblog' => '主题图库','off' => '关闭'),'off','随机高清缩略图', '设置后文章列表页在文章没有任何图片且没有单独设置封面时显示随机缩略图，如果想让文章详情页显示封面图，请编辑文章时填写自定义字段[文章封面]。');
-    $form->addInput($RandomIMG);  
-
+    $form->addInput($RandomIMG);
+    
+    // 评论极验验证
+    $GeetestID = new Typecho_Widget_Helper_Form_Element_Text('GeetestID', NULL, NULL, _t('极验ID'), _t('如需开启评论提交前的极验验证，请填写极验后台生成的 验证ID'));
+    $form->addInput($GeetestID);
+    
+    $GeetestKEY = new Typecho_Widget_Helper_Form_Element_Text('GeetestKEY', NULL, NULL, _t('极验KEY'), _t('如需开启评论提交前的极验验证，请填写极验后台生成的 验证KEY'));
+    $form->addInput($GeetestKEY);
+    
     
     //—————————————————————————————————————— 社交按钮 ——————————————————————————————————————
 
@@ -649,6 +656,79 @@ function MemosList($comments, $user) { ?>
     </li>
 <?php } 
 
+// 访客评论增加极验验证
+function oneblog_check_geetest($comment, $post, $result){
+    $options = Helper::options();
+    $captcha_id = $options->GeetestID;
+    $captcha_key = $options->GeetestKEY;
+    $api_server = "https://gcaptcha4.geetest.com";
+
+    // 判断是否登录
+    $user = Typecho_Widget::widget('Widget_User');
+    if ($user->hasLogin()) {
+        return $comment; // 已登录，直接放行
+    }
+
+    // 未配置极验，直接放行
+    if (empty($captcha_id) || empty($captcha_key)) {
+        return $comment;
+    }
+
+    // 检查前端票据
+    if (
+        isset($_POST['lot_number'], $_POST['captcha_output'], $_POST['pass_token'], $_POST['gen_time'])
+    ) {
+        $lot_number = $_POST['lot_number'];
+        $captcha_output = $_POST['captcha_output'];
+        $pass_token = $_POST['pass_token'];
+        $gen_time = $_POST['gen_time'];
+
+        $sign_token = hash_hmac('sha256', $lot_number, $captcha_key);
+        $query = [
+            "lot_number" => $lot_number,
+            "captcha_output" => $captcha_output,
+            "pass_token" => $pass_token,
+            "gen_time" => $gen_time,
+            "sign_token" => $sign_token
+        ];
+        $url = sprintf($api_server . "/validate?captcha_id=%s", $captcha_id);
+
+        $data = http_build_query($query);
+        $options_http = [
+            'http' => [
+                'method'  => 'POST',
+                'header'  => "Content-type: application/x-www-form-urlencoded",
+                'content' => $data,
+                'timeout' => 5
+            ]
+        ];
+        $context = stream_context_create($options_http);
+
+        // 屏蔽警告，防止 file_get_contents 失败时抛出警告
+        $result_geetest = @file_get_contents($url, false, $context);
+
+        // 判断请求是否成功
+        if ($result_geetest === false || empty($result_geetest)) {
+            exit('<script>alert("极验配置错误，请仔细检查！");history.back();</script>');
+        }
+
+        $obj = @json_decode($result_geetest, true);
+
+        // 后端严密校验
+        if (!is_array($obj) || !isset($obj['result'])) {
+            exit('<script>alert("极验配置错误，请仔细检查！");history.back();</script>');
+        }
+        if ($obj['result'] !== 'success') {
+            exit('<script>alert("极验验证未通过，请刷新页面重试！");history.back();</script>');
+        }
+        // 校验通过
+        return $comment;
+    } else {
+        // 没有极验参数时，阻止提交
+        exit('<script>alert("请先完成极验验证！");history.back();</script>');
+    }
+}
+Typecho_Plugin::factory('Widget_Feedback')->comment = 'oneblog_check_geetest';
 
 // 从分类描述中提取封面图片和文本描述
 

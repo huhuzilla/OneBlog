@@ -79,12 +79,15 @@ document.addEventListener('DOMContentLoaded', function () {
 <!--表情支持-->
 <script src="<?php $this->options->themeUrl('/static/js/emoji.js'); ?>"></script>
 
+<?php if ($this->options->GeetestID): ?>
+<!--人机验证-->
+<script src="https://static.geetest.com/v4/gt4.js"></script>
+<?php endif;?>
 <!--评论无限加载js-->
-<script src="<?php $this->options->themeUrl('/static/js/comments.js'); ?>"></script>
-
+<script src="<?php $this->options->themeUrl('/static/js/comments.js?v=3.6.4'); ?>"></script>
 <?php endif;?>
 
-<script src="<?php $this->options->themeUrl('/static/js/main.js?v=3.6.3'); ?>"></script><!--主题js-->
+<script src="<?php $this->options->themeUrl('/static/js/main.js?v=3.6.4'); ?>"></script><!--主题js-->
 
 <!-- 版权信息 -->
 <div id="copyright-info" style="display: none;">

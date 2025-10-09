@@ -7,14 +7,16 @@
  * 
  * @package OneBlog
  * @author 彼岸临窗
- * @version 3.6.3
+ * @version 3.6.4
  * @link https://oneblog.net
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
+
 $this->need('header.php'); ?>
 <div class="main">
 <?php $this->need('module/head.php');
-if ($this->is('index')){//首页显示banner
+if ($this->is('index')){
+    //首页显示banner
     if ($this->options->switch == 'on') {
         $defaultThumb = Helper::options()->themeUrl . '/static/img/bg.jpg';
         $defaultPost = [
@@ -48,6 +50,33 @@ if ($this->is('index')){//首页显示banner
         for ($i = count($posts); $i < 3; $i++) {
             $posts[] = $defaultPost;
         }?>
+        
+        
+        <!-- 骨架屏 -->
+        <div id="banner-skeleton">
+            <!-- 移动端骨架屏 -->
+            <div class="banner-skeleton-mobile m">
+                <div class="skeleton-banner-thumb-mobile skeleton-thumb-relative">
+                    <div class="skeleton-banner-indicator">
+                        <span class="skeleton-dot"></span>
+                        <span class="skeleton-dot"></span>
+                        <span class="skeleton-dot"></span>
+                    </div>
+                </div>
+            </div>
+            <!-- PC端骨架屏 -->
+            <div class="banner-skeleton-pc">
+                <div class="skeleton-banner-item-main">
+                    <div class="skeleton-banner-thumb-main"></div>
+                </div>
+                <div class="skeleton-banner-item-side">
+                    <div class="skeleton-banner-thumb-side"></div>
+                    <div class="skeleton-banner-thumb-side"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 根据设备类型自动生成banner内容 -->
         <div class="banner-container blur"></div>
         
         <script id="banner-json" type="application/json">

@@ -1,5 +1,5 @@
 /**
- * Updated: 2025-08-30
+ * Updated: 2025-10-09
  * Author: ©彼岸临窗 oneblog.net
  *
  * 注释含命名规范，开源不易，如需引用请注明来源:彼岸临窗 https://oneblog.net。
@@ -1066,6 +1066,17 @@ a.post {
     justify-content: center;
 }
 
+/**有封面图文章详情页的菜单按钮**/
+.post_thumb .menu-button {
+    background: #0f0f0f0f;
+    border-radius: 5px;
+}
+
+.post_thumb .menu-button:hover {
+    background: #0f0f0f30;
+    transition: 0.4s ease;
+}
+
 
 .post_thumb a {
     padding: 5px 15px;
@@ -2059,6 +2070,58 @@ pre code.hljs{display:block;overflow-x:auto;padding:1em}code.hljs{padding:3px 5p
     100% {
     width: 100%;
     }
+}
+
+/* banner加载完成前显示骨架屏 */
+@keyframes skeleton-breath {
+  0% { opacity: 0.2; }
+  50% { opacity: 1; }
+  100% { opacity: 0.2; }
+}
+
+#banner-skeleton {
+  padding: 0 60px;
+  margin-bottom: 30px;
+}
+
+.banner-skeleton-pc {
+  display: flex;
+}
+
+.skeleton-banner-item-main {
+  width: 50%;
+  border-radius: 10px;
+  margin-right: 10px;
+  display: inline-block;
+}
+.skeleton-banner-thumb-main {
+  border-radius: 5px;
+  height: 300px;
+  width: 100%;
+  margin-top: 10px;
+  background: #f5f5f5;
+  animation: skeleton-breath 2s infinite;
+}
+
+.skeleton-banner-item-side {
+  width: 50%;
+  border-radius: 10px;
+  display: inline-block;
+}
+.skeleton-banner-thumb-side {
+  border-radius: 5px;
+  height: 145px;
+  width: 100%;
+  margin-top: 10px;
+  background: #f5f5f5;
+  animation: skeleton-breath 2s infinite;
+  margin-bottom: 10px;
+}
+
+/* 让图片骨架成为定位容器 */
+.skeleton-thumb-relative {
+  position: relative;
+  overflow: hidden;
 }
 
 /**优先级最高 放在最末尾**/
