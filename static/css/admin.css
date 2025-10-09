@@ -70,11 +70,15 @@
 
 /**图标列表**/
 .icon-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* 每列最小120px，自动填充 */
+    display: flex;
+    flex-wrap: wrap; /* 允许换行 */
+    gap: 12px;       /* 图标间距 */
+    padding: 0;
 }
 
 .icon-item {
+    flex: 0 0 120px; /* 每个图标最小宽度120px，可自适应 */
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -83,6 +87,7 @@
     border: 1px solid #ffffff;
     background-color: #f7f7f7;
     text-align: center;
+    margin-bottom: 12px;
 }
 
 .icon-item i {
@@ -173,4 +178,35 @@ input[type="number"]:focus {
 
 .backupbtn {
     margin: 10px 0 0 30px;
+}
+
+/* 移动端适配，防止溢出 */
+@media (max-width: 600px) {
+    #tab-container {
+        flex-direction: column;
+        margin-top: 10px;
+    }
+    #tab-nav {
+        width: 100%;
+        margin: 0 0 10px 0;
+        padding: 10px;
+        border-radius: 10px;
+    }
+    #tab-content {
+        padding: 10px 10px 20px;
+        border-radius: 10px;
+    }
+    .icon-list {
+        gap: 8px;
+    }
+    .icon-item {
+        flex: 0 0 calc(50% - 8px); /* 两个一行，减去间距 */
+        max-width: calc(50% - 8px);
+        box-sizing: border-box;
+        padding: 6px;
+        margin-bottom: 8px;
+    }
+    .tab-pane {
+        min-height: 400px;
+    }
 }
