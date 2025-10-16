@@ -132,9 +132,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 //极验验证
 document.addEventListener('DOMContentLoaded', function () {
-    var commentList = document.querySelector('.comment-list');
-    if (!commentList) return;
-    
     var captchaIdInput = document.getElementById('geetest-captcha-id');
     var submitBtn = document.getElementById('geetest-submit-btn');
     var commentForm = document.getElementById('comment-form');
@@ -178,7 +175,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     submitBtn.addEventListener('click', function (e) {
-        // 不再同步内容，直接提交textarea的原始短代码内容
         e.preventDefault();
 
         // 已登录用户，内容校验后直接提交
