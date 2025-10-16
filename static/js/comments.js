@@ -1,5 +1,5 @@
 /**
- * Updated: 2025-10-09
+ * Updated: 2025-10-16
  * Author: ©彼岸临窗 oneblog.net
  *
  * 注释含命名规范，开源不易，如需引用请注明来源:彼岸临窗 https://oneblog.net。
@@ -24,67 +24,66 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function loadMoreComments() {
-    if (isLoading || noMoreComments) return;
+        if (isLoading || noMoreComments) return;
 
-    var nextPageUrl = document.querySelector('.page-navigator .next a')?.getAttribute('href');
-    if (!nextPageUrl) {
-        noMoreComments = true;
-        noMoreElement.style.display = 'flex';
+        var nextPageUrl = document.querySelector('.page-navigator .next a')?.getAttribute('href');
+        if (!nextPageUrl) {
+            noMoreComments = true;
+            noMoreElement.style.display = 'flex';
+            if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+            return;
+        }
+
+        isLoading = true;
+
+        // 开始加载：显示动画，隐藏按钮
+        if (loadingSpinner) loadingSpinner.style.display = 'flex';
         if (loadMoreBtn) loadMoreBtn.style.display = 'none';
-        return;
-    }
 
-    isLoading = true;
+        setTimeout(function () {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', nextPageUrl, true);
+            xhr.onload = function () {
+                if (xhr.status >= 200 && xhr.status < 400) {
+                    var tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = xhr.responseText;
 
-    // 开始加载：显示动画，隐藏按钮
-    if (loadingSpinner) loadingSpinner.style.display = 'flex';
-    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+                    var newComments = tempDiv.querySelector('.comment-list').innerHTML;
+                    commentList.insertAdjacentHTML('beforeend', newComments);
 
-    setTimeout(function () {
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', nextPageUrl, true);
-        xhr.onload = function () {
-            if (xhr.status >= 200 && xhr.status < 400) {
-                var tempDiv = document.createElement('div');
-                tempDiv.innerHTML = xhr.responseText;
+                    var newNav = tempDiv.querySelector('.page-navigator')?.innerHTML;
+                    if (newNav) {
+                        document.querySelector('.page-navigator').innerHTML = newNav;
+                    }
 
-                var newComments = tempDiv.querySelector('.comment-list').innerHTML;
-                commentList.insertAdjacentHTML('beforeend', newComments);
+                    var hasNext = tempDiv.querySelector('.page-navigator .next a');
+                    if (!hasNext) {
+                        noMoreComments = true;
+                        noMoreElement.style.display = 'flex';
+                        if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+                    } else {
+                        if (loadMoreBtn) loadMoreBtn.style.display = 'flex';
+                    }
 
-                var newNav = tempDiv.querySelector('.page-navigator')?.innerHTML;
-                if (newNav) {
-                    document.querySelector('.page-navigator').innerHTML = newNav;
-                }
-
-                var hasNext = tempDiv.querySelector('.page-navigator .next a');
-                if (!hasNext) {
-                    noMoreComments = true;
-                    noMoreElement.style.display = 'flex';
-                    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
                 } else {
+                    console.error('Request failed: ' + xhr.statusText);
                     if (loadMoreBtn) loadMoreBtn.style.display = 'flex';
                 }
 
-            } else {
-                console.error('Request failed: ' + xhr.statusText);
+                isLoading = false;
+                if (loadingSpinner) loadingSpinner.style.display = 'none';
+            };
+
+            xhr.onerror = function () {
+                console.error('Request failed');
+                isLoading = false;
+                if (loadingSpinner) loadingSpinner.style.display = 'none';
                 if (loadMoreBtn) loadMoreBtn.style.display = 'flex';
-            }
+            };
 
-            isLoading = false;
-            if (loadingSpinner) loadingSpinner.style.display = 'none';
-        };
-
-        xhr.onerror = function () {
-            console.error('Request failed');
-            isLoading = false;
-            if (loadingSpinner) loadingSpinner.style.display = 'none';
-            if (loadMoreBtn) loadMoreBtn.style.display = 'flex';
-        };
-
-        xhr.send();
-    }, 500);
-}
-
+            xhr.send();
+        }, 500);
+    }
 
     // 移动端采用滚动自动加载
     if (isMobile) {
@@ -118,8 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 点击回复时
     document.querySelectorAll('.comment-reply').forEach(function(replyBtn) {
         replyBtn.addEventListener('click', function() {
-            const author = this.getAttribute('data-author');
-            document.getElementById('reply-target').textContent = author;
+            document.getElementById('reply-target').textContent = this.getAttribute('data-author');
             document.getElementById('default-title').style.display = 'none';
             document.getElementById('reply-title').style.display = '';
         });
@@ -180,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     submitBtn.addEventListener('click', function (e) {
-        if (richEditor && textarea) textarea.value = richEditor.innerHTML.trim();
+        // 不再同步内容，直接提交textarea的原始短代码内容
         e.preventDefault();
 
         // 已登录用户，内容校验后直接提交
