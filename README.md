@@ -1,6 +1,6 @@
 ## TYPECHO文字博客主题：OneBlog 一款简约清新文艺的写作记录类单栏主题
 
-<a href="https://oneblog.net">![oneblog](https://upic.cc/ui/themelogo.png)</a>
+<a href="https://oneblog.net">![oneblog](https://blog.cncdn.cc/ui/themelogo.png)</a>
 
 ### 项目简介
 
@@ -55,7 +55,7 @@ OneBlog，一个博客，再无其他。本主题基于Typecho，设计初衷是
 
 |                      通过支付宝赞助                       |                       通过微信赞助                       |
 | :-------------------------------------------------------: | :------------------------------------------------------: |
-| <img width="200px" src="https://upic.cc/ui/alipay.png" /> | <img width="200px" src="https://upic.cc/ui/wxpay.png" /> |
+| <img width="200px" src="https://blog.cncdn.cc/ui/alipay.png" /> | <img width="200px" src="https://blog.cncdn.cc/ui/wxpay.png" /> |
 
 ### 主题交流QQ群
 
@@ -65,7 +65,7 @@ OneBlog，一个博客，再无其他。本主题基于Typecho，设计初衷是
 
 更多功能模块的演示请访问主题官网了解：[oneblog.net](https://oneblog.net)
 
-<img src="https://upic.cc/ui/screenshot.png" />
+<img src="https://blog.cncdn.cc/ui/screenshot.png" />
 
 ### 版本更新记录
 
