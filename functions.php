@@ -62,7 +62,8 @@ function themeConfig($form) {
     }
     $backPath = $absUploadDir . '/BackupSetting_' . $theTheme . '.txt';
 
-    $themeConfStr = $db->fetchRow($db->select()->from('table.options')->where('name = ?', 'theme:' . $theTheme))['value'];
+    $themeRow = $db->fetchRow($db->select()->from('table.options')->where('name = ?', 'theme:' . $theTheme));
+    $themeConfStr = empty($themeRow) ? '' : $themeRow['value'];
     $backstr = file_exists($backPath) ? file_get_contents($backPath) : '';?>
 
     <link rel="stylesheet" href="<?php echo Helper::options()->themeUrl('static/css/admin.css'); ?>" type="text/css" />
