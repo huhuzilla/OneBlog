@@ -2,22 +2,16 @@
 /**
  * 微语页面
  *
- * 目标：
- * - 插件启用：显示发布按钮 + 图片上传 + 图片展示
- * - 插件未启用/未安装：只保留“普通微语”发布与展示，不显示图片相关 UI，避免报错
- *
  * @package custom
  */
 
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 $this->need('header.php');
-
 $export = Typecho_Plugin::export();
 $memosImageEnabled = isset($export['activated']['MemosImage']);
 ?>
 <meta name="csrf-token" content="<?php echo Helper::security()->getToken($this->request->getRequestUrl()); ?>">
 <meta name="comment-url" content="<?php $this->commentUrl(); ?>">
-
 
 <div class="main">
 <?php $this->need('module/head2.php'); ?>
@@ -51,14 +45,15 @@ $memosImageEnabled = isset($export['activated']['MemosImage']);
     </div>
 
     <div class="memos-btn">
-        <?php if ($this->user->hasLogin() && $memosImageEnabled) : ?>
+        <?php if ($this->user->hasLogin()) : ?>
             <button id="publish-button">发布</button>
-        <?php elseif (!$this->user->hasLogin()) : ?>
+        <?php else : ?>
             <button id="login-button">登录</button>
         <?php endif; ?>
     </div>
 </div>
 
+<!-- 微语列表 -->
 <div id="comments" class="memos padding animated fadeIn blur">
     <?php $this->comments()->to($comments); ?>
     <?php if ($comments->have()) : ?>
@@ -88,8 +83,6 @@ $memosImageEnabled = isset($export['activated']['MemosImage']);
 <script>
     var loginAction = "<?php echo $this->options->loginAction(); ?>";
     var commentLikeUrl = "<?php Helper::options()->index('?commentLike=dz'); ?>";
-
-    // 插件启用时才合并配置；未启用时不创建 memosConfig，前端 main.js 也会直接 return
     <?php if ($memosImageEnabled) : ?>
     <?php $plugin = $this->options->plugin('MemosImage'); ?>
     window.memosConfig = Object.assign({}, window.memosConfig || {}, {

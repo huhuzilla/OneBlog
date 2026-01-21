@@ -84,10 +84,10 @@ document.addEventListener('DOMContentLoaded', function () {
 <script src="https://static.geetest.com/v4/gt4.js"></script>
 <?php endif;?>
 <!--评论无限加载js-->
-<script src="<?php $this->options->themeUrl('/static/js/comments.js?v=3.6.4'); ?>"></script>
+<script src="<?php $this->options->themeUrl('/static/js/comments.js?v=3.6.5'); ?>"></script>
 <?php endif;?>
 
-<script src="<?php $this->options->themeUrl('/static/js/main.js?v=3.6.4'); ?>"></script><!--主题js-->
+<script src="<?php $this->options->themeUrl('/static/js/main.js?v=3.6.5'); ?>"></script><!--主题js-->
 
 <!-- 版权信息 -->
 <div id="copyright-info" style="display: none;">
