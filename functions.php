@@ -62,13 +62,12 @@ function themeConfig($form) {
     }
     $backPath = $absUploadDir . '/BackupSetting_' . $theTheme . '.txt';
 
-    $themeRow = $db->fetchRow($db->select()->from('table.options')->where('name = ?', 'theme:' . $theTheme));
-    $themeConfStr = empty($themeRow) ? '' : $themeRow['value'];
+    $themeConfStr = $db->fetchRow($db->select()->from('table.options')->where('name = ?', 'theme:' . $theTheme))['value'];
     $backstr = file_exists($backPath) ? file_get_contents($backPath) : '';?>
 
-    <link rel="stylesheet" href="<?php echo Helper::options()->themeUrl('static/css/admin.css'); ?>" type="text/css" />
-    <script src="<?php echo Helper::options()->themeUrl('static/sdk/jquery.min.js'); ?>" type="text/javascript"></script>
-    <script src="<?php echo Helper::options()->themeUrl('static/sdk/layer/layer.js'); ?>" type="text/javascript"></script>
+    <link rel="stylesheet" href="https://cncdn.cc/oneblog/3.6.5/admin.css" type="text/css" />
+    <script src="https://cncdn.cc/jquery/3.7.1/dist/jquery.min.js" type="text/javascript"></script>
+    <script src="https://cncdn.cc/layer/3.1.1/layer.js" type="text/javascript"></script>
     <script src="<?php echo Helper::options()->themeUrl('static/js/admin.js'); ?>" type="text/javascript"></script>
     <div class="OneBlog"><h3>OneBlog 主题设置</h3></div>
     <div id="tab-container">
@@ -77,7 +76,7 @@ function themeConfig($form) {
             <div id="tab1" class="tab-pane active">
                 <h2>OneBlog V<?php echo parseThemeVersion();?></h2>
                 <p>本主题精心打磨多年，且持续优化，现免费开源，致敬互联网社区开源精神，也致敬热爱生活和记录的我们。</p>
-                <p>使用教程请前往<b></b>主题文档</b>：<a href="https://docs.oneblog.net" target="_blank">docs.oneblog.net</a> 获取，</a>主题最新版本请前往Github仓库：<a href="https://github.com/LawyerLu/OneBlog" target="_blank">OneBlog（最新）</a> 或 <a href="https://gitcode.com/LawyerLu/OneBlog" target="_blank">国内镜像仓库（延迟一天同步）</a>查看，记得★Star，既是对作者的支持，也方便记住来时的路。本主题几乎所有代码都清晰地注释了，因此博友们完全可以以OneBlog为基础二次开发或单独开发属于自己的主题，但希望大家注明来源，保留基本的版权信息。</p>
+                <p>使用教程请前往<b></b>主题文档</b>：<a href="https://docs.oneblog.net" target="_blank">docs.oneblog.net</a> 获取，</a>主题最新版本请前往Github仓库：<a href="https://github.com/cncodehub/OneBlog" target="_blank">OneBlog（最新）</a> 或 <a href="https://gitcode.com/cncdn/OneBlog" target="_blank">国内镜像仓库（延迟一天同步）</a>查看，记得★Star，既是对作者的支持，也方便记住来时的路。本主题几乎所有代码都清晰地注释了，因此博友们完全可以以OneBlog为基础二次开发或单独开发属于自己的主题，但希望大家注明来源，保留基本的版权信息。</p>
                 <p>本主题目前仅有QQ交流群：<b>939170079</b>，其他均不是官方群组，此外，还可以通过<a href="https://litebbs.com" target="_blank">LiteBBS</a>讨论交流。本主题的介绍、后续的更新或周边插件的开发更新，除了QQ群公告，还会同步发布在<a href="https://litebbs.com" target="_blank">LiteBBS</a>，欢迎大家参与讨论。</p>
                 <div class="backup">
                     <div class="backup-listen">
@@ -99,17 +98,21 @@ function themeConfig($form) {
     <?php
     
     //—————————————————————————————————————— 基础设置 ——————————————————————————————————————
-    //网站slogan
-    $slogan = new Typecho_Widget_Helper_Form_Element_Text('slogan', NULL, NULL, _t('网站slogan'), _t('一句话介绍网站，填写后会显示在独立页面的顶栏和首页的标题中。'));
-    $form->addInput($slogan);  
+    //LOGO风格
+    $logoStyle = new Typecho_Widget_Helper_Form_Element_Radio('logoStyle', array('text' => '文字logo','logo' => '图片logo'),'text', 'LOGO风格', '选择文字风格则logo处显示网站名称，选择图片风格则需要在下方设置logo地址');
+    $form->addInput($logoStyle);
     
     //网站logo
-    $logo = new Typecho_Widget_Helper_Form_Element_Text('logo', NULL, NULL, _t('LOGO'), _t('请输入深色logo图片的url，填写后会显示在PC首页和移动端顶栏，建议尺寸：300×83'));
+    $logo = new Typecho_Widget_Helper_Form_Element_Text('logo', NULL, NULL, _t('深色版LOGO'), _t('请输入深色logo图片的url，填写后会显示在PC首页和移动端顶栏，建议尺寸：300×83'));
     $form->addInput($logo); 
     
     //夜间模式下的logo
-    $logoWhite = new Typecho_Widget_Helper_Form_Element_Text('logoWhite', NULL, NULL, _t('夜间模式下的LOGO'), _t('请输入浅白色logo图片的url，填写后会显示在黑夜模式下的移动端顶栏，建议尺寸：300×83'));
+    $logoWhite = new Typecho_Widget_Helper_Form_Element_Text('logoWhite', NULL, NULL, _t('浅色版LOGO'), _t('请输入浅白色logo图片的url，填写后会显示在黑夜模式下的移动端顶栏，建议尺寸：300×83'));
     $form->addInput($logoWhite);
+    
+    //网站slogan
+    $slogan = new Typecho_Widget_Helper_Form_Element_Text('slogan', NULL, NULL, _t('网站slogan'), _t('一句话介绍网站，填写后会显示在独立页面的顶栏和首页的标题中。'));
+    $form->addInput($slogan); 
     
     //网站favicon
     $Favicon = new Typecho_Widget_Helper_Form_Element_Text('Favicon', NULL, NULL, _t('Favicon'), _t('请输入网站favicon图片的url。'));
@@ -167,6 +170,14 @@ function themeConfig($form) {
     $RandomIMG = new Typecho_Widget_Helper_Form_Element_Radio('RandomIMG', array('oneblog' => '主题图库','off' => '关闭'),'off','随机高清缩略图', '设置后文章列表页在文章没有任何图片且没有单独设置封面时显示随机缩略图，如果想让文章详情页显示封面图，请编辑文章时填写自定义字段[文章封面]。');
     $form->addInput($RandomIMG);
     
+    // Cloudflare Turnstile 前端 Site Key
+    $cfSiteKey = new Typecho_Widget_Helper_Form_Element_Text('CFSiteKey', NULL, '', _t('Cloudflare Turnstile SiteKey'), _t('填写 Turnstile 的 sitekey（用于前端）。留空则不启用 CF。'));
+    $form->addInput($cfSiteKey);
+
+    // Cloudflare Turnstile Secret（用于服务器端验证）
+    $cfSecret = new Typecho_Widget_Helper_Form_Element_Text('CFSecret', NULL, '', _t('Cloudflare Turnstile Secret'), _t('填写 Turnstile 的 secret（用于服务器端验证）。请妥善保管，不要公开。'));
+    $form->addInput($cfSecret);
+    
     // 评论极验验证
     $GeetestID = new Typecho_Widget_Helper_Form_Element_Text('GeetestID', NULL, NULL, _t('极验ID'), _t('如需开启评论提交前的极验验证，请填写极验后台生成的 验证ID'));
     $form->addInput($GeetestID);
@@ -207,10 +218,9 @@ function themeConfig($form) {
 
 }
 
-
 //文章自定义字段
 function themeFields($layout) { ?>
-    <link rel="stylesheet" href="<?php echo Helper::options()->themeUrl('static/css/admin.css'); ?>" type="text/css" />
+    <link rel="stylesheet" href="https://cncdn.cc/oneblog/3.6.5/admin.css" type="text/css" />
     <?php 
     $thumb = new Typecho_Widget_Helper_Form_Element_Text('thumb', NULL, NULL, _t('封面图片'), _t('此处填写后会让文章/独立页面详情样式显示为有封面图的样式效果，文章列表也会出现封面缩略图，搜索引擎抓取的也是该封面图。'));
  	$thumb->input->setAttribute('class', 'full-width-input');
@@ -416,7 +426,6 @@ function get_post_view($archive) {
     echo formatNum($displayViews);
 }
 
-
 //格式化阅读数：≥1000 单位转化为k；≥10000 单位转化为W；最多显示10W+
 function formatNum($num) {
 	if ($num >= 100000) {
@@ -525,7 +534,6 @@ function dengji($i) {
     }
 }
 
-
 //替换默认的Gravatar头像地址为国内镜像源 QQ邮箱取用qq头像
 function getGravatar($email, $s = 96, $d = 'mp', $r = 'g', $img = false, $atts = array()){
     preg_match_all('/((\d)*)@qq.com/', $email, $vai);
@@ -574,7 +582,6 @@ function themeInit($archive) {
     }
     
 }
-
 
 //评论点赞 cookie保证点赞数量准确
 function commentLikesNum($coid, &$record = NULL){
@@ -631,108 +638,308 @@ function commentLikes($archive){
     ));    
 }
 
-//微语数据加载
+// 微语数据加载
 function MemosList($comments, $user) { ?>
     <li class="animated fadeIn">
         <div id="<?php echo $comments->theId(); ?>">
             <div class="user">
-                <?php $email = $comments->mail; $imgUrl = getGravatar($email); echo '<img class="avatar" src="' . $imgUrl . '">'; ?>
+                <?php
+                $email = $comments->mail;
+                $imgUrl = getGravatar($email);
+                echo '<img class="avatar" src="' . $imgUrl . '">';
+                ?>
                 <div class="user-info">
                     <span class="name"><?php echo $comments->author(); ?></span>
                     <span class="date lite-black"><?php echo $comments->date('Y-m-d H:i'); ?></span>
                 </div>
             </div>
+
             <?php echo $comments->content(); ?>
-            <!-- 评论点赞次数 -->
-            <?php $commentLikes = commentLikesNum($comments->coid); 
-                $commentLikesNum = $commentLikes['likes'];
-                $commentLikesRecording = $commentLikes['recording'];?>
+
+            <?php if (isMemosImageEnabled()) : ?>
+                <?php $imgs = getMemosImages($comments->coid); ?>
+                <?php if (!empty($imgs)) : ?>
+                    <?php $count = count($imgs); ?>
+                    <div class="memos-img-grid grid-<?php echo $count; ?>">
+                        <?php foreach ($imgs as $img) : ?>
+                            <?php $thumb = getMemosThumbUrl($img); ?>
+                            <div class="memos-img-item">
+                                <a href="<?php echo htmlspecialchars($img); ?>"
+                                   data-fancybox="memos-<?php echo $comments->coid; ?>"
+                                   data-caption="<?php echo $comments->content(); ?>">
+                                    <img class="lazy-load"
+                                         src="<?php echo htmlspecialchars($thumb); ?>"
+                                         data-src="<?php echo htmlspecialchars($thumb); ?>">
+                                </a>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            <?php endif; ?>
+
+            <?php
+            $commentLikes = commentLikesNum($comments->coid);
+            $likes = $commentLikes['likes'];
+            $recording = $commentLikes['recording'];
+            ?>
             <div class="commentLike">
-                <a class="commentLikeOpt" id="commentLikeOpt-<?php echo $comments->coid; ?>" href="javascript:;" data-coid="<?php echo $comments->coid; ?>" data-recording="<?php echo $commentLikesRecording; ?>">
-                        <i id="commentLikeI-<?php echo $comments->coid; ?>" class="<?php echo $commentLikesRecording ? 'iconfont icon-liked red' : 'iconfont icon-like red'; ?>"></i>
-                        <span class="lite-black" id="commentLikeSpan-<?php echo $comments->coid; ?>"><?php echo $commentLikesNum; ?></span>
-                    </a>
-                </div>
+                <a class="commentLikeOpt"
+                   id="commentLikeOpt-<?php echo $comments->coid; ?>"
+                   href="javascript:;"
+                   data-coid="<?php echo $comments->coid; ?>"
+                   data-recording="<?php echo $recording; ?>">
+                    <i id="commentLikeI-<?php echo $comments->coid; ?>"
+                       class="<?php echo $recording ? 'iconfont icon-liked red' : 'iconfont icon-like red'; ?>"></i>
+                    <span class="lite-black" id="commentLikeSpan-<?php echo $comments->coid; ?>"><?php echo $likes; ?></span>
+                </a>
+            </div>
         </div>
     </li>
-<?php } 
+<?php }
 
-// 访客评论增加极验验证
-function oneblog_check_geetest($comment, $post, $result){
-    $options = Helper::options();
-    $captcha_id = $options->GeetestID;
-    $captcha_key = $options->GeetestKEY;
-    $api_server = "https://gcaptcha4.geetest.com";
+/**
+ * 判断插件是否启用
+ */
+function isMemosImageEnabled()
+{
+    $export = Typecho_Plugin::export();
+    return isset($export['activated']['MemosImage']);
+}
 
-    // 判断是否登录
-    $user = Typecho_Widget::widget('Widget_User');
-    if ($user->hasLogin()) {
-        return $comment; // 已登录，直接放行
+/**
+ * 获取微语图片（插件启用且表存在时才返回）
+ */
+function getMemosImages($coid)
+{
+    if (!isMemosImageEnabled()) {
+        return [];
     }
 
-    // 未配置极验，直接放行
-    if (empty($captcha_id) || empty($captcha_key)) {
-        return $comment;
+    $db = Typecho_Db::get();
+    $table = $db->getPrefix() . 'memos_img';
+
+    $exists = $db->fetchRow($db->query("SHOW TABLES LIKE '{$table}'"));
+    if (!$exists) {
+        return [];
     }
 
-    // 检查前端票据
-    if (
-        isset($_POST['lot_number'], $_POST['captcha_output'], $_POST['pass_token'], $_POST['gen_time'])
-    ) {
-        $lot_number = $_POST['lot_number'];
-        $captcha_output = $_POST['captcha_output'];
-        $pass_token = $_POST['pass_token'];
-        $gen_time = $_POST['gen_time'];
+    $row = $db->fetchRow(
+        $db->select('imgs')->from('table.memos_img')->where('coid = ?', $coid)
+    );
 
-        $sign_token = hash_hmac('sha256', $lot_number, $captcha_key);
-        $query = [
-            "lot_number" => $lot_number,
-            "captcha_output" => $captcha_output,
-            "pass_token" => $pass_token,
-            "gen_time" => $gen_time,
-            "sign_token" => $sign_token
-        ];
-        $url = sprintf($api_server . "/validate?captcha_id=%s", $captcha_id);
+    if (!$row || empty($row['imgs'])) {
+        return [];
+    }
 
-        $data = http_build_query($query);
-        $options_http = [
-            'http' => [
-                'method'  => 'POST',
-                'header'  => "Content-type: application/x-www-form-urlencoded",
-                'content' => $data,
-                'timeout' => 5
-            ]
-        ];
-        $context = stream_context_create($options_http);
+    $imgs = json_decode($row['imgs'], true);
+    return is_array($imgs) ? array_slice($imgs, 0, 9) : [];
+}
 
-        // 屏蔽警告，防止 file_get_contents 失败时抛出警告
-        $result_geetest = @file_get_contents($url, false, $context);
+/**
+ * 生成缩略图 URL：
+ * - 本地上传：原图名 + -s
+ * - COS/CDN：原图URL + 插件配置 cosThumbAppend（原样追加）
+ *
+ * 说明：不依赖 uploadMode，避免切换模式后影响历史图片。
+ */
+function getMemosThumbUrl($url)
+{
+    $append = '';
+    try {
+        $plugin = Helper::options()->plugin('MemosImage');
+        $append = (string)($plugin->cosThumbAppend ?? '');
+    } catch (Throwable $e) {}
 
-        // 判断请求是否成功
-        if ($result_geetest === false || empty($result_geetest)) {
-            exit('<script>alert("极验配置错误，请仔细检查！");history.back();</script>');
+    $isLocalUpload = (strpos($url, '/usr/uploads/') !== false);
+
+    if ($isLocalUpload) {
+        $pi = pathinfo($url);
+        if (empty($pi['extension'])) {
+            return $url;
         }
+        return $pi['dirname'] . '/' . $pi['filename'] . '-s.' . $pi['extension'];
+    }
 
-        $obj = @json_decode($result_geetest, true);
+    return $append !== '' ? ($url . $append) : $url;
+}
 
-        // 后端严密校验
-        if (!is_array($obj) || !isset($obj['result'])) {
-            exit('<script>alert("极验配置错误，请仔细检查！");history.back();</script>');
+
+//修复评论区域xss注入漏洞 2026.1.13
+function oneblog_comment_submit(){
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
+    // 仅在提交评论时执行安全检查
+    if (!isset($_POST['text']) && !isset($_POST['author'])) return;
+    // 通用清理器：移除换行和控制符
+    foreach ($_POST as $k => &$v) {
+        if (is_string($v)) {
+            $v = str_replace(["\r", "\n", "\0"], '', $v);
         }
-        if ($obj['result'] !== 'success') {
-            exit('<script>alert("极验验证未通过，请刷新页面重试！");history.back();</script>');
+    }
+    unset($v);
+    // 清理 url 字段
+    if (isset($_POST['url'])) {
+        $url = trim($_POST['url']);
+        if ($url === '') {
+            $_POST['url'] = '';
+        } else {
+            // 拦截包含危险字符、禁止危险协议、并只允许 http(s) 或 //
+            $hasBadChars = preg_match('/[\"\';<>\(\)\[\]\{\}]/', $url);
+            $badProtocol = preg_match('#^(javascript|data|vbscript):#i', $url);
+            $allowedScheme = preg_match('#^(https?://|//)#i', $url);
+            if ($hasBadChars || $badProtocol || !$allowedScheme) {
+                $_POST['url'] = '';
+            } else {
+                $_POST['url'] = $url;
+            }
         }
-        // 校验通过
-        return $comment;
-    } else {
-        // 没有极验参数时，阻止提交
-        exit('<script>alert("请先完成极验验证！");history.back();</script>');
+    }
+    // 清理 author / mail：移除引号与尖括号，避免属性注入
+    foreach (['author', 'mail'] as $k) {
+        if (isset($_POST[$k])) {
+            $_POST[$k] = preg_replace('/[\"\<\>]/', '', trim((string)$_POST[$k]));
+        }
+    }
+    // 同步清理$_REQUEST
+    foreach (['author','mail','url','text'] as $k) {
+        if (isset($_REQUEST[$k])) {
+            $_REQUEST[$k] = $_POST[$k] ?? $_REQUEST[$k];
+        }
     }
 }
-Typecho_Plugin::factory('Widget_Feedback')->comment = 'oneblog_check_geetest';
+oneblog_comment_submit();
+
+// 评论者链接新窗口打开 2026.1.13
+function comment_author_link($comments) {
+    $author = htmlspecialchars($comments->author, ENT_QUOTES, 'UTF-8');
+    // 获取 url（兼容对象/数组）
+    $url = '';
+    if (is_object($comments) && isset($comments->url)) {
+        $url = trim($comments->url);
+    } elseif (is_array($comments) && isset($comments['url'])) {
+        $url = trim($comments['url']);
+    }
+    if ($url !== '') {
+        $href = htmlspecialchars($url, ENT_QUOTES, 'UTF-8');
+        return '<a href="' . $href . '" target="_blank">' . $author . '</a>';
+    }
+    return $author;
+}
+
+
+// Ajax / 普通请求 通用错误输出
+function oneblog_abort($msg) {
+    if (
+        !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+        strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
+    ) {
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode([
+            'success' => false,
+            'message' => $msg
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    exit('<script>alert(' . json_encode($msg) . ');history.back();</script>');
+}
+
+/* Cloudflare Turnstile 验证 */
+function verify_cf_token($token, $secret, $remoteIp = null) {
+    if (empty($token)) return ['success' => false];
+
+    $post = [
+        'secret'   => $secret,
+        'response' => $token
+    ];
+    if ($remoteIp) $post['remoteip'] = $remoteIp;
+
+    $ch = curl_init('https://challenges.cloudflare.com/turnstile/v0/siteverify');
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => http_build_query($post),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 5,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_SSL_VERIFYHOST => 2,
+    ]);
+    $resp = curl_exec($ch);
+    curl_close($ch);
+
+    return json_decode($resp, true) ?: ['success' => false];
+}
+
+/* Ajax 评论验证码校验 */
+function oneblog_check_captcha($comment, $post, $result) {
+    $options = Helper::options();
+    $user = Typecho_Widget::widget('Widget_User');
+
+    if ($user->hasLogin()) {
+        return $comment;
+    }
+
+    /* ===== Cloudflare ===== */
+    if (!empty($options->CFSiteKey) && !empty($options->CFSecret)) {
+        if (empty($_POST['cf_token'])) {
+            oneblog_abort('请先完成安全验证');
+        }
+
+        $res = verify_cf_token(
+            $_POST['cf_token'],
+            $options->CFSecret,
+            $_SERVER['REMOTE_ADDR'] ?? null
+        );
+
+        if (empty($res['success'])) {
+            oneblog_abort('安全验证未通过，请重试');
+        }
+
+        return $comment;
+    }
+
+    /* ===== Geetest ===== */
+    if (!empty($options->GeetestID) && !empty($options->GeetestKEY)) {
+        foreach (['lot_number','captcha_output','pass_token','gen_time'] as $k) {
+            if (empty($_POST[$k])) {
+                oneblog_abort('请完成极验验证');
+            }
+        }
+
+        $sign = hash_hmac('sha256', $_POST['lot_number'], $options->GeetestKEY);
+        $query = [
+            'lot_number'     => $_POST['lot_number'],
+            'captcha_output' => $_POST['captcha_output'],
+            'pass_token'     => $_POST['pass_token'],
+            'gen_time'       => $_POST['gen_time'],
+            'sign_token'     => $sign
+        ];
+
+        $url = 'https://gcaptcha4.geetest.com/validate?captcha_id=' . $options->GeetestID;
+        $ctx = stream_context_create([
+            'http' => [
+                'method'  => 'POST',
+                'header'  => 'Content-Type: application/x-www-form-urlencoded',
+                'content' => http_build_query($query),
+                'timeout' => 5
+            ]
+        ]);
+
+        $resp = @file_get_contents($url, false, $ctx);
+        $json = json_decode($resp, true);
+
+        if (empty($json['result']) || $json['result'] !== 'success') {
+            oneblog_abort('极验验证未通过');
+        }
+
+        return $comment;
+    }
+
+    return $comment;
+}
+
+/* Hook 注册 */
+Typecho_Plugin::factory('Widget_Feedback')->comment = 'oneblog_check_captcha';
+
 
 // 从分类描述中提取封面图片和文本描述
-
 function CatInfo($description, $defaultImage = '') {
     // 设置默认图片路径
     if (empty($defaultImage)) {
@@ -778,5 +985,6 @@ function redirect_404(){
         exit;
     }
 }
+
 // 在页面加载之前调用
 Typecho_Plugin::factory('Widget_Archive')->beforeRender = 'redirect_404';

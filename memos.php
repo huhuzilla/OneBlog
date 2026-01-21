@@ -2,68 +2,103 @@
 /**
  * 微语页面
  *
+ * 目标：
+ * - 插件启用：显示发布按钮 + 图片上传 + 图片展示
+ * - 插件未启用/未安装：只保留“普通微语”发布与展示，不显示图片相关 UI，避免报错
+ *
  * @package custom
  */
- 
+
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
-$this->need('header.php'); ?>
+$this->need('header.php');
+
+$export = Typecho_Plugin::export();
+$memosImageEnabled = isset($export['activated']['MemosImage']);
+?>
 <meta name="csrf-token" content="<?php echo Helper::security()->getToken($this->request->getRequestUrl()); ?>">
 <meta name="comment-url" content="<?php $this->commentUrl(); ?>">
-<div class="main">
-<?php $this->need('module/head2.php');?>
 
-<!--背景图片+logo-->
+
+<div class="main">
+<?php $this->need('module/head2.php'); ?>
+
 <div class="page_thumb blur">
-    <!-- 背景图片容器 -->
-    <div class="post_bg lazy-load" data-src="<?php echo $this->fields->thumb ? $this->fields->thumb : Helper::options()->themeUrl . '/static/img/memos.jpg';?>"></div>
+    <div class="post_bg lazy-load"
+         data-src="<?php echo $this->fields->thumb ? $this->fields->thumb : Helper::options()->themeUrl . '/static/img/memos.jpg'; ?>">
+    </div>
+
     <div class="pc">
-        <!-- 新增的菜单按钮 -->
         <i class="iconfont icon-nav menu-button"></i>
         <div class="page-head">
-            <a class="logo" href="<?php $this->options->siteUrl(); ?>">
-                <img src="<?php echo $this->options->logoWhite ? $this->options->logoWhite : Helper::options()->themeUrl . '/static/img/logoWhite.svg'; ?>">
-            </a>
+            <?php if ($this->options->logoStyle == 'text') : ?>
+                <h1>
+                    <a href="<?php $this->options->siteUrl(); ?>"><?php $this->options->title(); ?></a>
+                    <span class="soul">生活志</span>
+                </h1>
+            <?php else : ?>
+                <a class="logo" href="<?php $this->options->siteUrl(); ?>">
+                    <img src="<?php echo $this->options->logoWhite ?: Helper::options()->themeUrl . '/static/img/logoWhite.svg'; ?>">
+                </a>
+            <?php endif; ?>
         </div>
     </div>
+
     <div class="m">
-        <h1 class="page-head"><?php $this->archiveTitle(' &raquo; ', ''); ?><span>A fleeting inspiration</span></h1> 
+        <h1 class="page-head">
+            <?php $this->archiveTitle(' &raquo; ', ''); ?>
+            <span>A fleeting inspiration</span>
+        </h1>
     </div>
+
     <div class="memos-btn">
-        <?php if($this->user->hasLogin()): ?>
+        <?php if ($this->user->hasLogin() && $memosImageEnabled) : ?>
             <button id="publish-button">发布</button>
-        <?php else: ?>
+        <?php elseif (!$this->user->hasLogin()) : ?>
             <button id="login-button">登录</button>
         <?php endif; ?>
     </div>
 </div>
 
-<!--微语列表-->
-    <div id="comments" class="memos padding animated fadeIn blur">
-        <?php $this->comments()->to($comments); ?>
-        <?php if ($comments->have()): ?>
-            <ul class="comment-list">
-                <?php while($comments->next()): ?>
-                    <?php MemosList($comments, $this->user); ?>
-                <?php endwhile; ?>
-            </ul>
-            <?php $comments->pageNav('', ''); ?>
-            <!-- 加载更多按钮，仅PC端显示，移动端隐藏 -->
-            <div class="load" id="load-more-comments">加载更多动态</div>
-            
-            <!-- 原有加载提示 -->
-            <div id="loading-spinner" style="display: none;">
-                <div class="spinner"></div><span>加载中...</span>
-            </div>
-            <div class="load" id="no-more" style="display: none;">—&nbsp;已加载全部数据&nbsp;—</div>
-        <?php endif; ?>
-    </div>
+<div id="comments" class="memos padding animated fadeIn blur">
+    <?php $this->comments()->to($comments); ?>
+    <?php if ($comments->have()) : ?>
+        <ul class="comment-list">
+            <?php while ($comments->next()) : ?>
+                <?php MemosList($comments, $this->user); ?>
+            <?php endwhile; ?>
+        </ul>
 
+        <?php $comments->pageNav('', ''); ?>
+
+        <div class="load" id="load-more-comments">加载更多动态</div>
+
+        <div id="loading-spinner" style="display: none;">
+            <div class="spinner"></div><span>加载中...</span>
+        </div>
+
+        <div class="load" id="no-more" style="display: none;">
+            —&nbsp;已加载全部数据&nbsp;—
+        </div>
+    <?php endif; ?>
+</div>
 
 <a id="gototop" class="hidden"><i class="iconfont icon-up"></i></a>
 </div>
-<!--传给js处理-->
+
 <script>
     var loginAction = "<?php echo $this->options->loginAction(); ?>";
-    var commentLikeUrl = "<?php Helper::options()->index("?commentLike=dz"); ?>";
+    var commentLikeUrl = "<?php Helper::options()->index('?commentLike=dz'); ?>";
+
+    // 插件启用时才合并配置；未启用时不创建 memosConfig，前端 main.js 也会直接 return
+    <?php if ($memosImageEnabled) : ?>
+    <?php $plugin = $this->options->plugin('MemosImage'); ?>
+    window.memosConfig = Object.assign({}, window.memosConfig || {}, {
+        enabled: true,
+        memosUseCos: "<?php echo $plugin->uploadMode ?: 'local'; ?>" === 'cos',
+        memosUploadUrl: "<?php Helper::options()->index('/action/memos-upload'); ?>",
+        memosSignUrl: "<?php Helper::options()->index('/action/memos-sign'); ?>"
+    });
+    <?php endif; ?>
 </script>
+
 <?php $this->need('footer.php'); ?>

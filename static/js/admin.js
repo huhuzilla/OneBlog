@@ -1,5 +1,5 @@
 /**
- * Updated: 2025-10-09
+ * Updated: 2026-01-21
  * Author: ©彼岸临窗 oneblog.net
  *
  * 注释含命名规范，开源不易，如需引用请注明来源:彼岸临窗 https://oneblog.net。
@@ -11,8 +11,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // Tab 配置
     const tabs = [
         { id: 'tab1', label: '主题说明', selector: null }, // 第一个 Tab 是静态内容
-        { id: 'base', label: '基础设置', selector: '[id*="slogan"],[id*="logo"],[id*="logowhite"],[id*="MenuSet"],[id*="Favicon"],[id*="switch"],[id*="Banner"],[id*="Menu"],[id*="Tagbg"],[id*="Webthumb"],[id*="Webtime"],[id*="ICP"],[id*="WA"]'},
-        { id: 'pro', label: '高级设置', selector: '[id*="dnsPrefetch"],[id*="imgSmall"],[id*="BeCode"],[id*="RandomIMG"],[id*="GeetestID"],[id*="GeetestKEY"]' },
+        { id: 'base', label: '基础设置', selector: '[id*="logoStyle"],[id*="slogan"],[id*="logo"],[id*="logowhite"],[id*="MenuSet"],[id*="Favicon"],[id*="switch"],[id*="Banner"],[id*="Menu"],[id*="Tagbg"],[id*="Webthumb"],[id*="Webtime"],[id*="ICP"],[id*="WA"]'},
+        { id: 'pro', label: '高级设置', selector: '[id*="dnsPrefetch"],[id*="imgSmall"],[id*="BeCode"],[id*="RandomIMG"],[id*="CFSiteKey"],[id*="CFSecret"],[id*="GeetestID"],[id*="GeetestKEY"]' },
         { id: 'social', label: '社交按钮', selector: '[id*="QQ"],[id*="Weixin"],[id*="Email"],[id*="Github"]' },
         { id: 'DIY', label: '样式定制', selector: '[id*="CSS"],[id*="JS"],[id*="themeColor"]' },
     ];
@@ -82,13 +82,13 @@ document.addEventListener('DOMContentLoaded', function () {
 function loadIconfont() {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = '//at.alicdn.com/t/c/font_3940454_drimor4umam.css'; // ONEBLOG图标库
+      link.href = '//at.alicdn.com/t/c/font_3940454_lp08yxn46sl.css'; // ONEBLOG图标库
       document.head.appendChild(link);
     }
 
 // 动态解析 iconfont.css
 async function loadAndParseIconfont() {
-  const response = await fetch('//at.alicdn.com/t/c/font_3940454_drimor4umam.css');// ONEBLOG图标库
+  const response = await fetch('//at.alicdn.com/t/c/font_3940454_lp08yxn46sl.css');// ONEBLOG图标库
   const cssContent = await response.text();
   const iconRegex = /\.(icon-[^:]+):before\s*{\s*content:\s*"([^"]+)"/g;
   const icons = [];

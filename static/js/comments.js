@@ -1,5 +1,5 @@
 /**
- * Updated: 2025-10-16
+ * Updated: 2026-01-21
  * Author: ©彼岸临窗 oneblog.net
  *
  * 注释含命名规范，开源不易，如需引用请注明来源:彼岸临窗 https://oneblog.net。
@@ -130,95 +130,173 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-//极验验证
+/** 新增 Cloudflare Turnstile 验证 20260115 ,可选择极验或CF验证或关闭验证**/
+/** Cloudflare Turnstile / Geetest Ajax 评论提交（最终增强版） **/
 document.addEventListener('DOMContentLoaded', function () {
-    var captchaIdInput = document.getElementById('geetest-captcha-id');
-    var submitBtn = document.getElementById('geetest-submit-btn');
-    var commentForm = document.getElementById('comment-form');
-    if (!submitBtn || !commentForm) return;
+    const form = document.getElementById('comment-form');
+    const submitBtn = document.getElementById('geetest-submit-btn');
+    if (!form || !submitBtn) return;
 
-    var authorInput = commentForm.querySelector('input[name="author"]');
-    var mailInput = commentForm.querySelector('input[name="mail"]');
-    var textarea = document.getElementById('textarea');
-    var richEditor = document.getElementById('rich-editor');
-    var isLoggedIn = !(authorInput && mailInput);
+    const textarea = document.getElementById('textarea');
+    const richEditor = document.getElementById('rich-editor');
+    const cfSiteKeyInput = document.getElementById('cf-sitekey');
+    const geetestIdInput = document.getElementById('geetest-captcha-id');
 
-    // 只要极验ID有值就启用极验，否则直接提交
-    var geetestEnabled = captchaIdInput && captchaIdInput.value;
-    var gtReady = false;
-    var captchaObj = null;
+    const cfEnabled = cfSiteKeyInput && cfSiteKeyInput.value;
+    const geetestEnabled = !cfEnabled && geetestIdInput && geetestIdInput.value;
 
-    if (!isLoggedIn && geetestEnabled) {
+    let hasSubmitted = false;
+    let captchaObj = null;
+    let gtReady = false;
+
+    const originText = submitBtn.innerText;
+
+    /* ===== 夜间模式 ===== */
+    function isNightMode() {
+        return document.documentElement.classList.contains('night');
+    }
+
+    /* ===== 按钮状态控制 ===== */
+    function setBtn(text, loading = false) {
+        submitBtn.innerHTML = '<span class="oneblog-blank"></span>' + text;
+        submitBtn.disabled = true;
+        submitBtn.classList.toggle('is-loading', loading);
+    }
+
+
+    function resetBtn() {
+        submitBtn.innerText = originText;
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('is-loading');
+    }
+
+    /* ===== Ajax 提交 ===== */
+    function ajaxSubmit() {
+        setBtn('提交中...', true);
+
+        const data = new FormData(form);
+
+        fetch(form.action, {
+            method: 'POST',
+            body: data,
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => {
+            if (res.status === 302 || res.redirected) return { success: true };
+
+            const ct = res.headers.get('content-type') || '';
+            if (ct.includes('application/json')) return res.json();
+
+            return { success: true };
+        })
+        .then(json => {
+            if (json.success) {
+                layer.msg('提交成功，请等待审核', { time: 1000 });
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                layer.msg(json.message || '提交失败');
+                hasSubmitted = false;
+                resetBtn();
+            }
+        })
+        .catch(() => {
+            layer.msg('网络错误，请稍后再试');
+            hasSubmitted = false;
+            resetBtn();
+        });
+    }
+
+    /* ===== Cloudflare Turnstile ===== */
+    function renderCF() {
+        setBtn('等待验证...', true);
+
+        let wrap = document.getElementById('cf-rich-wrap');
+        if (!wrap) {
+            wrap = document.createElement('div');
+            wrap.id = 'cf-rich-wrap';
+            richEditor.after(wrap);
+        } else {
+            wrap.innerHTML = '';
+        }
+
+        turnstile.render(wrap, {
+            sitekey: cfSiteKeyInput.value,
+            size: 'flexible',
+            theme: isNightMode() ? 'dark' : 'light',
+            callback: function (token) {
+                let input = form.querySelector('[name="cf_token"]');
+                if (!input) {
+                    input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'cf_token';
+                    form.appendChild(input);
+                }
+                input.value = token;
+                ajaxSubmit();
+            }
+        });
+    }
+
+    /* ===== Geetest ===== */
+    if (geetestEnabled) {
         window.initGeetest4({
-            captchaId: captchaIdInput.value,
-            product: 'bind',
-            riskType: 'slide',
-            hideSuccess: true // 关键：关闭验证成功弹窗
+            captchaId: geetestIdInput.value,
+            product: 'bind'
         }, function (obj) {
             captchaObj = obj;
-            obj.onReady(function () { gtReady = true; });
+            obj.onReady(() => gtReady = true);
             obj.onSuccess(function () {
-                var result = obj.getValidate();
-                ['lot_number', 'captcha_output', 'pass_token', 'gen_time'].forEach(function (k) {
-                    var input = commentForm.querySelector('[name="' + k + '"]');
-                    if (!input) {
-                        input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = k;
-                        commentForm.appendChild(input);
+                setBtn('提交中...', true);
+
+                const result = obj.getValidate();
+                Object.keys(result).forEach(k => {
+                    let i = form.querySelector(`[name="${k}"]`);
+                    if (!i) {
+                        i = document.createElement('input');
+                        i.type = 'hidden';
+                        i.name = k;
+                        form.appendChild(i);
                     }
-                    input.value = result[k];
+                    i.value = result[k];
                 });
-                commentForm.submit();
+
+                ajaxSubmit();
             });
         });
     }
 
+    /* ===== 提交入口 ===== */
     submitBtn.addEventListener('click', function (e) {
         e.preventDefault();
+        if (hasSubmitted) return;
+        hasSubmitted = true;
 
-        // 已登录用户，内容校验后直接提交
-        if (isLoggedIn) {
-            if (!textarea.value.trim()) {
-                layer && layer.msg ? layer.msg('评论内容不能为空') : alert('评论内容不能为空');
-                return false;
-            }
-            commentForm.submit();
-            return false;
-        }
-
-        // 未登录用户，先校验基本字段
-        var author = authorInput ? authorInput.value.trim() : "";
-        var mail = mailInput ? mailInput.value.trim() : "";
-        var text = textarea.value.trim();
-        if (!author) {
-            layer && layer.msg ? layer.msg('昵称不能为空') : alert('昵称不能为空');
-            if (authorInput) authorInput.focus();
-            return false;
-        }
-        if (!/^[\w\.-]+@[\w\.-]+\.\w+$/.test(mail)) {
-            layer && layer.msg ? layer.msg('请填写正确的邮箱') : alert('请填写正确的邮箱');
-            if (mailInput) mailInput.focus();
-            return false;
-        }
-        if (!text) {
-            layer && layer.msg ? layer.msg('评论内容不能为空') : alert('评论内容不能为空');
-            if (richEditor) richEditor.focus();
-            return false;
+        if (!textarea.value.trim()) {
+            layer.msg('评论内容不能为空');
+            hasSubmitted = false;
+            resetBtn();
+            return;
         }
 
-        // 启用极验时，弹窗验证
+        if (cfEnabled) {
+            renderCF();
+            return;
+        }
+
         if (geetestEnabled) {
-            if (captchaObj && gtReady) {
-                captchaObj.showCaptcha();
-            } else {
-                layer && layer.msg ? layer.msg('极验服务加载中，请稍候重试') : alert('极验服务加载中，请稍候重试');
+            if (!captchaObj || !gtReady) {
+                layer.msg('验证组件加载中');
+                hasSubmitted = false;
+                resetBtn();
+                return;
             }
-            return false;
+            setBtn('等待验证...', true);
+            captchaObj.showCaptcha();
+            return;
         }
 
-        // 未启用极验，直接提交
-        commentForm.submit();
-        return false;
+        ajaxSubmit();
     });
 });
+

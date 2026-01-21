@@ -1,3 +1,8 @@
+<?php
+/**
+ * comments.php（含 Cloudflare Turnstile 集成，优先 CF，其次 Geetest）
+ */
+?>
 <div class="padding blur" id="comments">
 <?php $this->comments()->to($comments); ?>
 <!--评论输入框-->
@@ -11,6 +16,7 @@
         <div id="reply-title" style="display:none">回复<div id="reply-target"></div>
         </div>
     </h3>
+    
     <form method="post" action="<?php $this->commentUrl() ?>" id="comment-form" role="form">
     <?php if ($this->user->hasLogin()): ?>
     <?php else: ?>
@@ -28,11 +34,19 @@
                 <input type="url" name="url" id="url" class="text" placeholder="<?php _e('https://'); ?>" value="<?php $this->remember('url'); ?>"<?php if ($this->options->commentsRequireURL): ?> required<?php endif; ?> />
             </div>
         </div>
-    <?php endif; ?>
-    
-    <?php if ($this->options->GeetestID): ?>
-    <input type="hidden" id="geetest-captcha-id" value="<?php echo htmlspecialchars($this->options->GeetestID); ?>" />
-    <?php endif; ?>
+        
+        <!-- Cloudflare Turnstile: 前端 SiteKey（隐藏）与隐藏 token 字段 -->
+        <?php if ($this->options->CFSiteKey): ?>
+        <input type="hidden" id="cf-sitekey" value="<?php echo htmlspecialchars($this->options->CFSiteKey); ?>" />
+        <input type="hidden" name="cf_token" id="cf-token" value="" />
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+        <?php elseif ($this->options->GeetestID): ?>
+        <input type="hidden" id="geetest-captcha-id" value="<?php echo htmlspecialchars($this->options->GeetestID); ?>" />
+        <?php endif; ?>
+            
+        <?php endif; ?>
+
+
     <!-- 隐藏的textarea，实际提交用 -->
     <textarea name="text" id="textarea" style="display:none;" required></textarea>
     <!-- 可编辑div，表情预览和输入都在这里 -->
@@ -78,11 +92,11 @@ function threadedComments($comments, $options) {$commentLevelClass = $comments->
 <li class="animated fadeIn depth-<?php echo $comments->levels + 1; ?> <?php echo $commentLevelClass;?>"> <!-- 添加深度类 -->
     <div id="<?php $comments->theId(); ?>">
     <div class="user">
-        <?php $email=$comments->mail; $imgUrl = getGravatar($email);echo '<img class="avatar" src="'.$imgUrl.'">'; ?>
+        <?php $email=htmlspecialchars($comments->mail, ENT_QUOTES, 'UTF-8'); $imgUrl = getGravatar($email);echo '<img class="avatar" src="'.$imgUrl.'">'; ?>
         <div class="user-info">
             <div class="name">
-                <?php $comments->author(); ?>
-                <?php dengji($comments->mail);?>
+                <?php echo comment_author_link($comments); ?>
+                <?php dengji(htmlspecialchars($comments->mail, ENT_QUOTES, 'UTF-8'));?>
                 <?php if ($comments->status === "waiting") : ?>
                     <span class="waiting">[ 审核中 ]</span>
                 <?php endif; ?>
@@ -127,4 +141,4 @@ function threadedComments($comments, $options) {$commentLevelClass = $comments->
 <?php endif; ?>
     
 <!--评论列表end-->
-</div> 
+</div>

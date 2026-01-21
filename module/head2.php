@@ -19,7 +19,11 @@
 <!--顶部菜单-->
 <div class="header bg-white m">
     <i class="iconfont icon-nav"></i>
-    <a class="logo" id="logo" href="<?php $this->options->siteUrl(); ?>" style="background-image:url('<?php echo $this->options->logo ? $this->options->logo : Helper::options()->themeUrl . '/static/img/logo.svg'; ?>')"></a>
+    <?php if ($this->options->logoStyle == 'text') {?>
+        <h1><a href="<?php $this->options->siteUrl(); ?>"><?php $this->options->title();?></a><span class="soul">博客</span></h1>
+    <?php }else{ ?>
+        <a class="logo" id="logo" href="<?php $this->options->siteUrl(); ?>" style="background-image:url('<?php echo $this->options->logo ? $this->options->logo : Helper::options()->themeUrl . '/static/img/logo.svg'; ?>')"></a>
+    <?php }?>
     <i id="search-btn" class="iconfont icon-search"></i>
 </div>
 

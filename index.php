@@ -7,7 +7,7 @@
  * 
  * @package OneBlog
  * @author 彼岸临窗
- * @version 3.6.4
+ * @version 3.6.5
  * @link https://oneblog.net
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
