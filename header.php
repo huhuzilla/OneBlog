@@ -21,12 +21,16 @@ foreach ($domains as $domain): ?>
 <?php elseif($this->is('archive') && isset($this->request->year)): ?>
 <?php echo $this->request->year; ?>年发布的文章 - <?php $this->options->title(); ?>
 <?php else:?>
+<?php if ($this->is('post')): ?>
+<?php echo $this->row['title']; ?> - <?php $this->options->title(); ?>
+<?php else: ?>
 <?php $this->archiveTitle([
             'category' => _t('%s'),
             'search'   => _t('包含关键字 %s 的文章'),
             'tag'      => _t('标签 %s 下的文章'),
             'author'   => _t('%s 发布的文章')
         ], '', ' - '); ?><?php $this->options->title(); ?>
+<?php endif; ?>
 <?php endif; ?>
 </title>
 <link href="https://cncdn.cc/animate.css/4.1.1/animate.min.css" rel="stylesheet"><!--动画效果-->
