@@ -1,9 +1,6 @@
 /**
- * Updated: 2026-01-21
+ * Updated: 2026-01-22
  * Author: ©彼岸临窗 oneblog.net
- *
- * 注释含命名规范，开源不易，如需引用请注明来源:彼岸临窗 https://oneblog.net。
- * 本主题已取得软件著作权（登记号：2025SR0334142）和外观设计专利（专利号：第7121519号），请严格遵循GPL-2.0协议使用本主题及源码。
  */
 document.addEventListener('DOMContentLoaded', function () {
     var commentList = document.querySelector('.comment-list');
@@ -14,29 +11,24 @@ document.addEventListener('DOMContentLoaded', function () {
     var loadingSpinner = document.getElementById('loading-spinner');
     var noMoreElement = document.getElementById('no-more');
     var loadMoreBtn = document.getElementById('load-more-comments');
-
     var isMobile = window.innerWidth <= 768;
 
-    // 如果是PC端，则显示加载按钮
-    if (!isMobile && loadMoreBtn) {
-        loadMoreBtn.style.display = 'flex';
-        loadMoreBtn.addEventListener('click', loadMoreComments);
+    function checkNoMore() {
+        var hasNext = document.querySelector('.page-navigator .next a');
+        if (!hasNext) {
+            noMoreComments = true;
+            noMoreElement.style.display = 'flex';
+            if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+        }
+        return ! hasNext;
     }
 
     function loadMoreComments() {
         if (isLoading || noMoreComments) return;
-
         var nextPageUrl = document.querySelector('.page-navigator .next a')?.getAttribute('href');
-        if (!nextPageUrl) {
-            noMoreComments = true;
-            noMoreElement.style.display = 'flex';
-            if (loadMoreBtn) loadMoreBtn.style.display = 'none';
-            return;
-        }
+        if (!nextPageUrl) return checkNoMore();
 
         isLoading = true;
-
-        // 开始加载：显示动画，隐藏按钮
         if (loadingSpinner) loadingSpinner.style.display = 'flex';
         if (loadMoreBtn) loadMoreBtn.style.display = 'none';
 
@@ -47,256 +39,283 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (xhr.status >= 200 && xhr.status < 400) {
                     var tempDiv = document.createElement('div');
                     tempDiv.innerHTML = xhr.responseText;
-
-                    var newComments = tempDiv.querySelector('.comment-list').innerHTML;
-                    commentList.insertAdjacentHTML('beforeend', newComments);
-
-                    var newNav = tempDiv.querySelector('.page-navigator')?.innerHTML;
-                    if (newNav) {
-                        document.querySelector('.page-navigator').innerHTML = newNav;
-                    }
-
-                    var hasNext = tempDiv.querySelector('.page-navigator .next a');
-                    if (!hasNext) {
-                        noMoreComments = true;
-                        noMoreElement.style.display = 'flex';
-                        if (loadMoreBtn) loadMoreBtn.style.display = 'none';
-                    } else {
-                        if (loadMoreBtn) loadMoreBtn.style.display = 'flex';
-                    }
-
-                } else {
-                    console.error('Request failed: ' + xhr.statusText);
-                    if (loadMoreBtn) loadMoreBtn.style.display = 'flex';
+                    commentList.insertAdjacentHTML('beforeend', tempDiv.querySelector('.comment-list').innerHTML);
+                    var newNav = tempDiv.querySelector('.page-navigator')?. innerHTML;
+                    if (newNav) document.querySelector('.page-navigator').innerHTML = newNav;
+                    if (! checkNoMore() && loadMoreBtn) loadMoreBtn.style.display = 'flex';
+                } else if (loadMoreBtn) {
+                    loadMoreBtn.style.display = 'flex';
                 }
-
                 isLoading = false;
                 if (loadingSpinner) loadingSpinner.style.display = 'none';
             };
-
             xhr.onerror = function () {
-                console.error('Request failed');
                 isLoading = false;
                 if (loadingSpinner) loadingSpinner.style.display = 'none';
                 if (loadMoreBtn) loadMoreBtn.style.display = 'flex';
             };
-
             xhr.send();
         }, 500);
     }
 
-    // 移动端采用滚动自动加载
+    if (! isMobile && loadMoreBtn) {
+        loadMoreBtn.style.display = 'flex';
+        loadMoreBtn.addEventListener('click', loadMoreComments);
+    }
+
     if (isMobile) {
         window.addEventListener('scroll', function () {
             if (isLoading || noMoreComments) return;
-
             var scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-            var scrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
+            var scrollHeight = document.documentElement.scrollHeight || document.body. scrollHeight;
             var clientHeight = document.documentElement.clientHeight || document.body.clientHeight;
-
-            if (scrollTop + clientHeight >= scrollHeight - 200) {
-                loadMoreComments();
-            }
+            if (scrollTop + clientHeight >= scrollHeight - 200) loadMoreComments();
         });
     }
 
-    // 初始检查是否还有下一页
-    var initialNextPageUrl = document.querySelector('.page-navigator .next a')?.getAttribute('href');
-    if (!initialNextPageUrl) {
-        noMoreComments = true;
-        noMoreElement.style.display = 'flex';
-        if (loadMoreBtn) loadMoreBtn.style.display = 'none';
-    }
+    checkNoMore();
 });
 
-
-/** 回复时替换表单标题 20250602**/
+/** 回复标题切换 **/
 document.addEventListener('DOMContentLoaded', function() {
-    var commentList = document.querySelector('.comment-list');
-    if (!commentList) return; // 如果当前页面不存在评论，则不执行该JS
-    // 点击回复时
-    document.querySelectorAll('.comment-reply').forEach(function(replyBtn) {
-        replyBtn.addEventListener('click', function() {
-            document.getElementById('reply-target').textContent = this.getAttribute('data-author');
+    if (! document.querySelector('.comment-list')) return;
+
+    document.addEventListener('click', function(e) {
+        var replyBtn = e.target.closest('.comment-reply');
+        if (replyBtn) {
+            document.getElementById('reply-target').textContent = replyBtn.getAttribute('data-author');
             document.getElementById('default-title').style.display = 'none';
             document.getElementById('reply-title').style.display = '';
-        });
+        }
     });
 
-    // 点击取消回复时
     document.querySelector('.cancel-comment-reply a')?.addEventListener('click', function() {
         document.getElementById('reply-title').style.display = 'none';
         document.getElementById('default-title').style.display = '';
     });
 });
 
-/** 新增 Cloudflare Turnstile 验证 20260115 ,可选择极验或CF验证或关闭验证**/
-/** Cloudflare Turnstile / Geetest Ajax 评论提交（最终增强版） **/
+/** Ajax 评论提交 **/
 document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('comment-form');
+    const form = document. getElementById('comment-form');
     const submitBtn = document.getElementById('geetest-submit-btn');
-    if (!form || !submitBtn) return;
+    if (! form || !submitBtn) return;
 
     const textarea = document.getElementById('textarea');
     const richEditor = document.getElementById('rich-editor');
-    const cfSiteKeyInput = document.getElementById('cf-sitekey');
-    const geetestIdInput = document.getElementById('geetest-captcha-id');
+    const cfSiteKey = document.getElementById('cf-sitekey')?.value;
+    const geetestId = document.getElementById('geetest-captcha-id')?.value;
 
-    const cfEnabled = cfSiteKeyInput && cfSiteKeyInput.value;
-    const geetestEnabled = !cfEnabled && geetestIdInput && geetestIdInput.value;
-
-    let hasSubmitted = false;
+    let submitting = false;
     let captchaObj = null;
     let gtReady = false;
-
     const originText = submitBtn.innerText;
 
-    /* ===== 夜间模式 ===== */
-    function isNightMode() {
-        return document.documentElement.classList.contains('night');
-    }
-
-    /* ===== 按钮状态控制 ===== */
-    function setBtn(text, loading = false) {
+    function setBtn(text, loading) {
         submitBtn.innerHTML = '<span class="oneblog-blank"></span>' + text;
         submitBtn.disabled = true;
-        submitBtn.classList.toggle('is-loading', loading);
+        submitBtn.classList. toggle('is-loading', loading);
     }
-
 
     function resetBtn() {
         submitBtn.innerText = originText;
         submitBtn.disabled = false;
         submitBtn.classList.remove('is-loading');
+        submitting = false;
     }
 
-    /* ===== Ajax 提交 ===== */
+    function extractText(html) {
+        const div = document.createElement('div');
+        div.innerHTML = html;
+        div.querySelectorAll('script,style,noscript').forEach(el => el.remove());
+        for (const sel of ['.container h1', '.container p', 'body h1', 'body p', 'pre']) {
+            const el = div. querySelector(sel);
+            const txt = el?. textContent?. trim();
+            if (txt && txt.length < 300) return txt;
+        }
+        let text = (div.textContent || '').replace(/\s+/g, ' ').trim();
+        return text. length > 150 ? text.substring(0, 150) + '...' : text;
+    }
+
+    // 局部刷新评论列表
+    function reloadComments(newCoid) {
+        fetch(location.href, { credentials: 'same-origin' })
+        .then(res => res. text())
+        .then(html => {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            
+            const newList = doc.querySelector('.comment-list');
+            const oldList = document.querySelector('.comment-list');
+            
+            if (newList) {
+                if (oldList) {
+                    oldList.innerHTML = newList.innerHTML;
+                } else {
+                    // 原本无评论，插入新列表
+                    const respond = document.querySelector('.respond');
+                    if (respond) {
+                        respond. insertAdjacentHTML('afterend', '<ol class="comment-list">' + newList.innerHTML + '</ol>');
+                    }
+                }
+            }
+            
+            // 更新分页
+            const newNav = doc.querySelector('.page-navigator');
+            const oldNav = document.querySelector('.page-navigator');
+            if (newNav && oldNav) oldNav.innerHTML = newNav.innerHTML;
+            
+            // 滚动到新评论并高亮
+            if (newCoid) {
+                setTimeout(() => {
+                    const el = document.getElementById('comment-' + newCoid);
+                    if (el) {
+                        el.classList.add('comment-new');
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        setTimeout(() => el.classList.remove('comment-new'), 3000);
+                    }
+                }, 100);
+            }
+        })
+        .catch(() => location.reload());
+    }
+
     function ajaxSubmit() {
         setBtn('提交中...', true);
 
-        const data = new FormData(form);
-
-        fetch(form.action, {
+        fetch(form. action, {
             method: 'POST',
-            body: data,
+            body: new FormData(form),
             credentials: 'same-origin',
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
-        .then(res => {
-            if (res.status === 302 || res.redirected) return { success: true };
+        .then(res => res. text().then(text => ({ status: res.status, text })))
+        .then(({ status, text }) => {
+            let json = null;
+            try { json = JSON.parse(text); } catch (e) {}
 
-            const ct = res.headers.get('content-type') || '';
-            if (ct.includes('application/json')) return res.json();
-
-            return { success: true };
-        })
-        .then(json => {
-            if (json.success) {
-                layer.msg('提交成功，请等待审核', { time: 1000 });
-                setTimeout(() => location.reload(), 2000);
-            } else {
-                layer.msg(json.message || '提交失败');
-                hasSubmitted = false;
+            if (status >= 400) {
+                layer.msg(json?.message || extractText(text) || '请求失败(' + status + ')', { time: 3000 });
                 resetBtn();
+                return;
             }
+
+            if (json && json.success) {
+                layer.msg(json.message || '评论提交成功', { time: 2000 });
+                textarea.value = '';
+                if (richEditor) richEditor.innerHTML = '';
+                document.querySelector('.cancel-comment-reply a')?.click();
+                reloadComments(json.coid);
+                resetBtn();
+                return;
+            }
+
+            if (json && ! json.success) {
+                layer.msg(json.message || '提交失败', { time:  3000 });
+                resetBtn();
+                return;
+            }
+
+            const keywords = ['失败', '错误', '禁止', '拒绝', '不允许', '太快', '垃圾', '不合规','error', 'fail', 'spam'];
+            if (keywords.some(k => text.toLowerCase().includes(k))) {
+                layer.msg(extractText(text) || '提交失败', { time:  3000 });
+            } else {
+                layer.msg('提交状态未知，正在刷新...', { time: 1500 });
+                setTimeout(() => location.reload(), 1800);
+            }
+            resetBtn();
         })
         .catch(() => {
-            layer.msg('网络错误，请稍后再试');
-            hasSubmitted = false;
+            layer.msg('网络错误，请稍后重试', { time: 3000 });
             resetBtn();
         });
     }
 
-    /* ===== Cloudflare Turnstile ===== */
     function renderCF() {
         setBtn('等待验证...', true);
-
         let wrap = document.getElementById('cf-rich-wrap');
         if (!wrap) {
-            wrap = document.createElement('div');
+            wrap = document. createElement('div');
             wrap.id = 'cf-rich-wrap';
             richEditor.after(wrap);
         } else {
             wrap.innerHTML = '';
         }
-
         turnstile.render(wrap, {
-            sitekey: cfSiteKeyInput.value,
+            sitekey: cfSiteKey,
             size: 'flexible',
-            theme: isNightMode() ? 'dark' : 'light',
-            callback: function (token) {
+            theme: document. documentElement.classList.contains('night') ? 'dark' : 'light',
+            callback: token => {
                 let input = form.querySelector('[name="cf_token"]');
-                if (!input) {
+                if (! input) {
                     input = document.createElement('input');
-                    input.type = 'hidden';
+                    input. type = 'hidden';
                     input.name = 'cf_token';
-                    form.appendChild(input);
+                    form. appendChild(input);
                 }
                 input.value = token;
+                setTimeout(() => {
+                        if (wrap) {
+                            wrap.remove();
+                        }
+                    }, 2000);
                 ajaxSubmit();
+            },
+            'error-callback': () => {
+                layer.msg('验证加载失败，请刷新重试');
+                resetBtn();
             }
         });
     }
 
-    /* ===== Geetest ===== */
-    if (geetestEnabled) {
-        window.initGeetest4({
-            captchaId: geetestIdInput.value,
-            product: 'bind'
-        }, function (obj) {
+    if (geetestId && !cfSiteKey) {
+        window.initGeetest4({ captchaId: geetestId, product: 'bind' }, obj => {
             captchaObj = obj;
             obj.onReady(() => gtReady = true);
-            obj.onSuccess(function () {
+            obj.onSuccess(() => {
                 setBtn('提交中...', true);
-
                 const result = obj.getValidate();
                 Object.keys(result).forEach(k => {
-                    let i = form.querySelector(`[name="${k}"]`);
-                    if (!i) {
-                        i = document.createElement('input');
-                        i.type = 'hidden';
-                        i.name = k;
-                        form.appendChild(i);
+                    let input = form.querySelector(`[name="${k}"]`);
+                    if (! input) {
+                        input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = k;
+                        form.appendChild(input);
                     }
-                    i.value = result[k];
+                    input.value = result[k];
                 });
-
                 ajaxSubmit();
+            });
+            obj.onError(() => {
+                layer.msg('验证组件出错，请刷新重试');
+                resetBtn();
             });
         });
     }
 
-    /* ===== 提交入口 ===== */
     submitBtn.addEventListener('click', function (e) {
         e.preventDefault();
-        if (hasSubmitted) return;
-        hasSubmitted = true;
+        if (submitting) return;
+        submitting = true;
 
-        if (!textarea.value.trim()) {
+        if (! textarea.value.trim()) {
             layer.msg('评论内容不能为空');
-            hasSubmitted = false;
             resetBtn();
             return;
         }
 
-        if (cfEnabled) {
+        if (cfSiteKey) {
             renderCF();
-            return;
-        }
-
-        if (geetestEnabled) {
-            if (!captchaObj || !gtReady) {
-                layer.msg('验证组件加载中');
-                hasSubmitted = false;
+        } else if (geetestId) {
+            if (! captchaObj || !gtReady) {
+                layer. msg('验证组件加载中，请稍后');
                 resetBtn();
                 return;
             }
             setBtn('等待验证...', true);
             captchaObj.showCaptcha();
-            return;
+        } else {
+            ajaxSubmit();
         }
-
-        ajaxSubmit();
     });
 });
-

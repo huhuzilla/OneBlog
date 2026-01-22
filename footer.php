@@ -3,8 +3,9 @@
         <?php if ($menu = CustomMenu()): ?>
         <?php echo $menu['noIcon']; ?>
         <?php endif; ?>
-        <!--如果需要仅在网站底部额外增加页面路径，则按照以下格式增加即可：-->
+        <!--如果需要仅在网站底部额外增加页面路径，则按照以下格式增加即可：
         <a href="/archives">归档</a>
+        -->
         
     </div>
     <div class="copyright">

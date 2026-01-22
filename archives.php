@@ -19,9 +19,16 @@ $this->need('header.php'); ?>
         <!-- 新增的菜单按钮 -->
         <i class="iconfont icon-nav menu-button"></i>
         <div class="page-head">
-            <a class="logo" href="<?php $this->options->siteUrl(); ?>">
-                <img src="<?php echo $this->options->logoWhite ? $this->options->logoWhite : Helper::options()->themeUrl . '/static/img/logoWhite.svg'; ?>">
-            </a>
+            <?php if ($this->options->logoStyle == 'text') : ?>
+                <h1>
+                    <a href="<?php $this->options->siteUrl(); ?>"><?php $this->options->title(); ?></a>
+                    <span class="soul">生活志</span>
+                </h1>
+            <?php else : ?>
+                <a class="logo" href="<?php $this->options->siteUrl(); ?>">
+                    <img src="<?php echo $this->options->logoWhite ?: Helper::options()->themeUrl . '/static/img/logoWhite.svg'; ?>">
+                </a>
+            <?php endif; ?>
         </div>
     </div>
     <div class="m">

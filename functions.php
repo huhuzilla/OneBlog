@@ -1,7 +1,7 @@
 <?php if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 /**
  * Theme：OneBlog
- * Updated: 2025-10-09
+ * Updated: 2026-01-22
  * Author: ©彼岸临窗 oneblog.net
  * 注释含命名规范，开源不易，如需引用请注明来源:彼岸临窗 https://oneblog.net。
  * 本主题已取得软件著作权（登记号：2025SR0334142）和外观设计专利（专利号：第7121519号），请严格遵循GPL-2.0协议使用本主题及源码。
@@ -76,7 +76,7 @@ function themeConfig($form) {
             <div id="tab1" class="tab-pane active">
                 <h2>OneBlog V<?php echo parseThemeVersion();?></h2>
                 <p>本主题精心打磨多年，且持续优化，现免费开源，致敬互联网社区开源精神，也致敬热爱生活和记录的我们。</p>
-                <p>使用教程请前往<b></b>主题文档</b>：<a href="https://docs.oneblog.net" target="_blank">docs.oneblog.net</a> 获取，</a>主题最新版本请前往Github仓库：<a href="https://github.com/cncodehub/OneBlog" target="_blank">OneBlog（最新）</a> 或 <a href="https://gitcode.com/cncdn/OneBlog" target="_blank">国内镜像仓库（延迟一天同步）</a>查看，记得★Star，既是对作者的支持，也方便记住来时的路。本主题几乎所有代码都清晰地注释了，因此博友们完全可以以OneBlog为基础二次开发或单独开发属于自己的主题，但希望大家注明来源，保留基本的版权信息。</p>
+                <p>使用教程请前往<b></b>主题文档</b>：<a href="https://docs.oneblog.net" target="_blank">docs.oneblog.net</a> 获取，主题最新版本请前往Github仓库：<a href="https://github.com/cncodehub/OneBlog" target="_blank">OneBlog（最新）</a> 或 <a href="https://gitcode.com/cncdn/OneBlog" target="_blank">国内镜像仓库（延迟一天同步）</a>查看，记得★Star，既是对作者的支持，也方便记住来时的路。本主题几乎所有代码都清晰地注释了，因此博友们完全可以以OneBlog为基础二次开发或单独开发属于自己的主题，但希望大家注明来源，保留基本的版权信息。</p>
                 <p>本主题目前仅有QQ交流群：<b>939170079</b>，其他均不是官方群组，此外，还可以通过<a href="https://litebbs.com" target="_blank">LiteBBS</a>讨论交流。本主题的介绍、后续的更新或周边插件的开发更新，除了QQ群公告，还会同步发布在<a href="https://litebbs.com" target="_blank">LiteBBS</a>，欢迎大家参与讨论。</p>
                 <div class="backup">
                     <div class="backup-listen">
@@ -574,13 +574,30 @@ function showThumbnail($widget){
     return;
 }
 
-//挂载点赞路径
+//挂载点赞路径 + Ajax评论
 function themeInit($archive) {
-    //评论点赞
+    // 评论点赞
     if ($archive->request->is("commentLike=dz")) {
         commentLikes($archive);
     }
     
+    // Ajax 评论
+    if ($archive->request->isPost() && 
+        !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+        strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        
+        Typecho_Plugin::factory('Widget_Feedback')->finishComment = function($comment) {
+            if (ob_get_length()) ob_clean();
+            header('Content-Type: application/json; charset=UTF-8');
+            
+            echo json_encode([
+                'success' => true,
+                'message' => $comment->status === 'waiting' ? '评论提交成功，请等待审核' :  '评论发表成功',
+                'coid'    => $comment->coid
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        };
+    }
 }
 
 //评论点赞 cookie保证点赞数量准确
@@ -736,11 +753,7 @@ function getMemosImages($coid)
 }
 
 /**
- * 生成缩略图 URL：
- * - 本地上传：原图名 + -s
- * - COS/CDN：原图URL + 插件配置 cosThumbAppend（原样追加）
- *
- * 说明：不依赖 uploadMode，避免切换模式后影响历史图片。
+ * 生成缩略图 URL
  */
 function getMemosThumbUrl($url)
 {
@@ -872,12 +885,13 @@ function oneblog_check_captcha($comment, $post, $result) {
     $options = Helper::options();
     $user = Typecho_Widget::widget('Widget_User');
 
+    // 已登录用户跳过验证
     if ($user->hasLogin()) {
         return $comment;
     }
 
     /* ===== Cloudflare ===== */
-    if (!empty($options->CFSiteKey) && !empty($options->CFSecret)) {
+    if (! empty($options->CFSiteKey) && !empty($options->CFSecret)) {
         if (empty($_POST['cf_token'])) {
             oneblog_abort('请先完成安全验证');
         }
@@ -896,7 +910,7 @@ function oneblog_check_captcha($comment, $post, $result) {
     }
 
     /* ===== Geetest ===== */
-    if (!empty($options->GeetestID) && !empty($options->GeetestKEY)) {
+    if (! empty($options->GeetestID) && !empty($options->GeetestKEY)) {
         foreach (['lot_number','captcha_output','pass_token','gen_time'] as $k) {
             if (empty($_POST[$k])) {
                 oneblog_abort('请完成极验验证');
@@ -937,6 +951,7 @@ function oneblog_check_captcha($comment, $post, $result) {
 
 /* Hook 注册 */
 Typecho_Plugin::factory('Widget_Feedback')->comment = 'oneblog_check_captcha';
+
 
 
 // 从分类描述中提取封面图片和文本描述
