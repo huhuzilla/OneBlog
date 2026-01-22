@@ -44,7 +44,7 @@ $this->need('header.php'); ?>
             $articlesByYear[$year] = [];
         }
         $articlesByYear[$year][] = [
-            'title' => $archives->title,
+            'title' => $archives->hidden ? '密码保护：' . $archives->row['title'] : $archives->row['title'],
             'permalink' => $archives->permalink,
             'date' => date('m月d日', $archives->created)
         ];
