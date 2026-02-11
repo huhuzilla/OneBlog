@@ -106,17 +106,17 @@ if ($this->is('index')){
     <div id="posts" class="blur">
         <?php while($this->next()): ?>
         <a href="<?php $this->permalink() ?>" class="post" >
-            <h1 class="animated fadeInUp">
+            <h1 class="animate__animated animate__fadeInUp">
                 <?php echo $this->hidden ? '密码保护：' . $this->row['title'] : $this->row['title'];?>
             </h1>
-            <div class="post_preview animated fadeInUp">
+            <div class="post_preview animate__animated animate__fadeInUp">
                 <p><?php $this->excerpt(80,'...'); ?></p>
                 <?php if(showThumbnail($this)):?>
                 <div class="post_img lazy-load" data-src="<?php echo showThumbnail($this) . ($this->options->imgSmall ?: ''); ?>">
                 </div>
                 <?php endif;?>
             </div>
-            <div class="post_meta animated fadeInUp">
+            <div class="post_meta animate__animated animate__fadeInUp">
                 <span><?php echo time_ago($this->date); ?></span>
                 <span><?php get_post_view($this) ?>&nbsp;阅读</span>
                 <span><?php $this->commentsNum('0 评论', '1 评论', '%d 评论'); ?></span>

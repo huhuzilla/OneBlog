@@ -33,7 +33,7 @@ $this->need('header.php'); ?>
         <h1 class="page-head"><?php $this->archiveTitle(' &raquo; ', ''); ?><span>My online friends</span></h1> 
     </div>
 </div>
-<div class="page-title animated fadeIn pc">
+<div class="page-title animate__animated animate__fadeIn pc">
     <h1><?php $this->title(); ?></h1>   
 </div>
 <?php if (array_key_exists('Links', Typecho_Plugin::export()['activated'])):?>
@@ -56,7 +56,7 @@ $this->need('header.php'); ?>
         <span>暂未启用Links插件，请先安装并启用该插件。</span>
     </div>
 	<?php endif;?>
-    <div class="post_content padding animated fadeIn blur">
+    <div class="post_content padding animate__animated animate__fadeIn blur">
         <h4 class="link-request">
             <span>#</span>
             友链要求

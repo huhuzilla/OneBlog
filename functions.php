@@ -657,7 +657,7 @@ function commentLikes($archive){
 
 // 微语数据加载
 function MemosList($comments, $user) { ?>
-    <li class="animated fadeIn">
+    <li class="animate__animated animate__fadeIn">
         <div id="<?php echo $comments->theId(); ?>">
             <div class="user">
                 <?php

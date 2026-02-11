@@ -14,7 +14,7 @@ $this->need('header.php'); ?>
             <!-- 新增的菜单按钮 -->
             <i class="iconfont icon-nav menu-button"></i>
             <!-- 内容容器保持不变 -->
-            <div class="post_header padding animated fadeIn">
+            <div class="post_header padding animate__animated animate__fadeIn">
                 <?php $firstCat = $this->categories[0]; ?>
                 <a href="<?php echo $firstCat['permalink']; ?>"><?php echo $firstCat['name']; ?></a>
                 <h1><?php echo $this->hidden ? '密码保护：' . $this->row['title'] : $this->row['title']; ?></h1>   
@@ -48,7 +48,7 @@ $this->need('header.php'); ?>
     
     <?php else: ?>
     <!--没有封面图的文章详情页顶部样式-->
-    <div class="post_nothumb blur animated fadeIn">
+    <div class="post_nothumb blur animate__animated animate__fadeIn">
         <div class="breadcrumb">
             <li><a href="<?php $this->options->siteUrl(); ?>">首页</a><span>&gt;</span></li>
             <li><?php $firstCat = $this->categories[0]; ?><a href="<?php echo $firstCat['permalink']; ?>"><?php echo $firstCat['name']; ?></a><span>&gt;</span></li>
@@ -67,7 +67,7 @@ $this->need('header.php'); ?>
     </div>
     <?php endif;?>
     <!--通用文章正文-->
-    <div class="post_content padding blur animated fadeIn">
+    <div class="post_content padding blur animate__animated animate__fadeIn">
         <?php echo AutoLightbox($this->content);?>
         <div class="cc-say">
             本文著作权归作者 [&nbsp;<span><?php if($this->fields->author){ $this->fields->author();}else{$this->author();}?></span>&nbsp;] 享有，未经作者书面授权，禁止转载，封面图片来源于 [&nbsp;<span><?php echo $this->fields->origin ? $this->fields->origin : '互联网' ;?></span>&nbsp;] ，本文仅供个人学习、研究和欣赏使用。如有异议，请联系博主及时处理。

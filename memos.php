@@ -54,7 +54,7 @@ $memosImageEnabled = isset($export['activated']['MemosImage']);
 </div>
 
 <!-- 微语列表 -->
-<div id="comments" class="memos padding animated fadeIn blur">
+<div id="comments" class="memos padding animate__animated animate__fadeIn blur">
     <?php $this->comments()->to($comments); ?>
     <?php if ($comments->have()) : ?>
         <ul class="comment-list">

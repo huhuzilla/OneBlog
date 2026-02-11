@@ -60,7 +60,7 @@ function showNativeMenu() {
   }, 10);
   $('.menu > li').each(function(idx) {
       $(this)
-        .addClass('animated fadeInLeftShort')
+        .addClass('animate__animated fadeInLeftShort')
         .css('animation-delay', (idx * 0.09) + 's');
     });
 }
@@ -70,7 +70,7 @@ function hideNativeMenu() {
   $(document).off('click.menu');
   $('.menu > li').each(function(){
   $(this)
-    .removeClass('animated fadeInLeftShort')
+    .removeClass('animate__animated fadeInLeftShort')
     .css('animation-delay', '');
 });
 }

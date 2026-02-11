@@ -35,12 +35,12 @@ $this->need('header.php'); ?>
         <h1 class="page-head"><?php $this->archiveTitle(' &raquo; ', ''); ?><span>Blog's Archives</span></h1> 
     </div>
 </div>
-<div class="page-title animated fadeIn pc">
+<div class="page-title animate__animated animate__fadeIn pc">
     <h1><?php $this->title(); ?></h1>   
 </div>
 
 <!-- 全部文章（不再排除任何分类） -->
-<section class="archives padding animated fadeIn blur">
+<section class="archives padding animate__animated animate__fadeIn blur">
     <?php 
     $this->widget('Widget_Contents_Post_Recent', 'pageSize=10000')->to($archives);
     $articlesByYear = [];
@@ -67,7 +67,7 @@ $this->need('header.php'); ?>
 </section>
 
 <!-- 全部独立页面 -->
-<section class="archives padding animated fadeIn blur">
+<section class="archives padding animate__animated animate__fadeIn blur">
     <h3><span>#</span>页面</h3>
     <?php 
     $this->widget('Widget_Contents_Page_List')->to($pages);
@@ -78,7 +78,7 @@ $this->need('header.php'); ?>
 </section>
 
 <!-- 全部分类 -->
-<section class="archives padding animated fadeIn blur">
+<section class="archives padding animate__animated animate__fadeIn blur">
     <h3><span>#</span>分类</h3>
     <?php 
     $this->widget('Widget_Metas_Category_List')->to($categories);
@@ -89,7 +89,7 @@ $this->need('header.php'); ?>
 </section>
 
 <!-- 全部标签 -->
-<section class="archives padding animated fadeIn blur">
+<section class="archives padding animate__animated animate__fadeIn blur">
     <h3><span>#</span>标签</h3>
     <div class="tags">
         <?php 

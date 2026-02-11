@@ -40,6 +40,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     var tempDiv = document.createElement('div');
                     tempDiv.innerHTML = xhr.responseText;
                     commentList.insertAdjacentHTML('beforeend', tempDiv.querySelector('.comment-list').innerHTML);
+                    // 重新观察视图区域的图片数据
+                    if (typeof initLazyLoad === 'function') {
+                        initLazyLoad();
+                    }
                     var newNav = tempDiv.querySelector('.page-navigator')?. innerHTML;
                     if (newNav) document.querySelector('.page-navigator').innerHTML = newNav;
                     if (! checkNoMore() && loadMoreBtn) loadMoreBtn.style.display = 'flex';

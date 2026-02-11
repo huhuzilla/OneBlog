@@ -89,7 +89,7 @@ function getParentAuthor($comments) {
     return null;
 }
 function threadedComments($comments, $options) {$commentLevelClass = $comments->levels > 0 ? 'comment-child' : 'comment-parent';?>
-<li class="animated fadeIn depth-<?php echo $comments->levels + 1; ?> <?php echo $commentLevelClass;?>"> <!-- 添加深度类 -->
+<li class="animate__animated animate__fadeIn depth-<?php echo $comments->levels + 1; ?> <?php echo $commentLevelClass;?>"> <!-- 添加深度类 -->
     <div id="<?php $comments->theId(); ?>">
     <div class="user">
         <?php $email=htmlspecialchars($comments->mail, ENT_QUOTES, 'UTF-8'); $imgUrl = getGravatar($email);echo '<img class="avatar" src="'.$imgUrl.'">'; ?>

@@ -14,7 +14,7 @@ $this->need('header.php'); ?>
             <!-- 新增的菜单按钮 -->
             <i class="iconfont icon-nav menu-button"></i>
             <!-- 内容容器保持不变 -->
-            <div class="post_header padding animated fadeIn">
+            <div class="post_header padding animate__animated animate__fadeIn">
 
                 <h1><?php $this->title() ?></h1>   
                 <div class="post_meta">
@@ -39,7 +39,7 @@ $this->need('header.php'); ?>
     
     <?php else: ?>
     <!--没有封面图的页面顶部样式-->
-    <div class="post_nothumb blur animated fadeIn">
+    <div class="post_nothumb blur animate__animated animate__fadeIn">
         <div class="breadcrumb">
             <li><a href="<?php $this->options->siteUrl(); ?>">首页</a><span>&gt;</span></li>
             <li><?php $this->title() ?></li>
@@ -56,7 +56,7 @@ $this->need('header.php'); ?>
     </div>
     <?php endif;?>
     <!--通用正文-->
-    <div class="post_content padding blur animated fadeIn">
+    <div class="post_content padding blur animate__animated animate__fadeIn">
         <?php echo AutoLightbox($this->content);?>
     </div> 
     <!--通用文章评论-->

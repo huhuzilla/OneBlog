@@ -32,10 +32,10 @@ $this->widget('Album_Widget_Photo@photoList', 'page=' . $currentPage)->to($photo
             <h1 class="page-head"><?php $this->archiveTitle(' &raquo; ', ''); ?><span>Scenery along the way</span></h1> 
         </div>
     </div>
-    <div class="page-title animated fadeIn pc">
+    <div class="page-title animate__animated animate__fadeIn pc">
         <h1><?php $this->title(); ?></h1>   
     </div>
-    <div class="photo-contain blur animated fadeIn">
+    <div class="photo-contain blur animate__animated animate__fadeIn">
         <?php if (array_key_exists('Album', Typecho_Plugin::export()['activated'])):?>
         <!--相册-->
         <div class="photos" id="photos">
