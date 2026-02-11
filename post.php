@@ -17,7 +17,7 @@ $this->need('header.php'); ?>
             <div class="post_header padding animated fadeIn">
                 <?php $firstCat = $this->categories[0]; ?>
                 <a href="<?php echo $firstCat['permalink']; ?>"><?php echo $firstCat['name']; ?></a>
-                <h1><?php $this->title() ?></h1>   
+                <h1><?php echo $this->hidden ? '密码保护：' . $this->row['title'] : $this->row['title']; ?></h1>   
                 <div class="post_meta">
                     <span><?php $this->date('Y.m.d'); ?></span>
                     <span>/</span>
@@ -39,7 +39,7 @@ $this->need('header.php'); ?>
         
         <!--文章标题和统计-->
         <div class="post_info">
-            <h1><?php $this->title();?></h1>   
+            <h1><?php echo $this->hidden ? '密码保护：' . $this->row['title'] : $this->row['title'];?></h1>   
             <span>阅读&nbsp;<?php get_post_view($this) ?></span>
             <span><?php $this->commentsNum('评论 0', '评论 1', '评论 %d'); ?></span>
             <span>发表于<?php $this->date('Y.m.d'); ?></span>
@@ -57,7 +57,7 @@ $this->need('header.php'); ?>
         <div class="pc">
             <i class="iconfont icon-nav menu-button"></i>
         </div>
-        <h1><?php $this->title() ?></h1>   
+        <h1><?php echo $this->hidden ? '密码保护：' . $this->row['title'] : $this->row['title']; ?></h1>   
         <div class="post_meta">
             <span><?php $this->date('Y年m月d日'); ?></span>
             <span><?php get_post_view($this) ?>&nbsp;阅读</span>
