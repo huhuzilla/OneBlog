@@ -41,7 +41,7 @@ if ($this->is('index')){
     
             $posts[] = [
                 'link' => $post->permalink,
-                'title' => $post->title,
+                'title' => $post->hidden ? '密码保护：' . $post->row['title'] : $post->row['title'],
                 'thumb' => $thumbnail,
             ];
         }
@@ -107,7 +107,7 @@ if ($this->is('index')){
         <?php while($this->next()): ?>
         <a href="<?php $this->permalink() ?>" class="post" >
             <h1 class="animated fadeInUp">
-                <?php $this->title();?>
+                <?php echo $this->hidden ? '密码保护：' . $this->row['title'] : $this->row['title'];?>
             </h1>
             <div class="post_preview animated fadeInUp">
                 <p><?php $this->excerpt(80,'...'); ?></p>
