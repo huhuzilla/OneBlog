@@ -16,7 +16,7 @@
             <?php if (!empty($this->options->ICP)): ?>
                 <a href="https://beian.miit.gov.cn/" target="_blank" rel="nofollow noreferrer"><?php $this->options->ICP(); ?></a><br>
             <?php endif; ?>
-            Theme by <a id="copyright-pc" href="https://oneblog.net/oneblog" title="自豪地使用OneBlog主题" target="_blank">OneBlog</a> V<?php echo parseThemeVersion();?>         
+            Theme by <a id="copyright-pc" href="https://docs.onenote.io" title="自豪地使用OneBlog主题" target="_blank">OneBlog</a> V<?php echo parseThemeVersion();?>         
             <div class="switch">
                 <span>夜间模式</span>
                 <input type="checkbox" id="night2" class="night-toggle">
@@ -96,9 +96,9 @@ document.addEventListener('DOMContentLoaded', function () {
 </div>
 
 <script type="text/javascript">
-$(document).on('click', '#qq', function() {layer.msg('<?php $this->options->QQ();?>',{time:4000});});    	
+$(document).on('click', '#qq', function() {layer.msg('<?php $this->options->QQ();?>',{time:4000});});       
 $(document).on('click', '#wxmp', function() {layer.open({type: 1,title: false,closeBtn: 0,shadeClose: true,skin: 'layui-layer-nobg',area: ['auto'], content: '<img id= "mywxmp" style="width:20rem;height:20rem;display:block;" src="<?php $this->options->Weixin();?>">'});});
-$(document).on('click', '#tomail', function() {layer.msg('联系邮箱：<?php $this->options->Email();?>',{time:4000});});    	
+$(document).on('click', '#tomail', function() {layer.msg('联系邮箱：<?php $this->options->Email();?>',{time:4000});});       
 </script>
 <!--自定义JS代码-->
 <?php if (!empty($this->options->JS)): ?>

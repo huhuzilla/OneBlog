@@ -2,8 +2,8 @@
 /**
  * Theme：OneBlog
  * Updated: 2026-01-22
- * Author: ©彼岸临窗 oneblog.net
- * 注释含命名规范，开源不易，如需引用请注明来源:彼岸临窗 https://oneblog.net。
+ * Author: ©彼岸临窗 onenote.io
+ * 注释含命名规范，开源不易，如需引用请注明来源:彼岸临窗 https://onenote.io。
  * 本主题已取得软件著作权（登记号：2025SR0334142）和外观设计专利（专利号：第7121519号），请严格遵循GPL-2.0协议使用本主题及源码。
  */
  
@@ -76,7 +76,7 @@ function themeConfig($form) {
             <div id="tab1" class="tab-pane active">
                 <h2>OneBlog V<?php echo parseThemeVersion();?></h2>
                 <p>本主题精心打磨多年，且持续优化，现免费开源，致敬互联网社区开源精神，也致敬热爱生活和记录的我们。</p>
-                <p>使用教程请前往<b></b>主题文档</b>：<a href="https://docs.oneblog.net" target="_blank">docs.oneblog.net</a> 获取，主题最新版本请前往Github仓库：<a href="https://github.com/cncodehub/OneBlog" target="_blank">OneBlog（最新）</a> 或 <a href="https://gitcode.com/cncdn/OneBlog" target="_blank">国内镜像仓库（延迟一天同步）</a>查看，记得★Star，既是对作者的支持，也方便记住来时的路。本主题几乎所有代码都清晰地注释了，因此博友们完全可以以OneBlog为基础二次开发或单独开发属于自己的主题，但希望大家注明来源，保留基本的版权信息。</p>
+                <p>使用教程请前往<b></b>主题文档</b>：<a href="https://docs.onenote.io" target="_blank">docs.onenote.io</a> 获取，主题最新版本请前往Github仓库：<a href="https://github.com/cnxcdn/OneBlog" target="_blank">OneBlog（最新）</a> 或 <a href="https://gitcode.com/cncdn/OneBlog" target="_blank">国内镜像仓库（延迟一天同步）</a>查看，记得★Star，既是对作者的支持，也方便记住来时的路。本主题几乎所有代码都清晰地注释了，因此博友们完全可以以OneBlog为基础二次开发或单独开发属于自己的主题，但希望大家注明来源，保留基本的版权信息。</p>
                 <p>本主题目前仅有QQ交流群：<b>939170079</b>，其他均不是官方群组，此外，还可以通过<a href="https://litebbs.com" target="_blank">LiteBBS</a>讨论交流。本主题的介绍、后续的更新或周边插件的开发更新，除了QQ群公告，还会同步发布在<a href="https://litebbs.com" target="_blank">LiteBBS</a>，欢迎大家参与讨论。</p>
                 <div class="backup">
                     <div class="backup-listen">
@@ -154,7 +154,7 @@ function themeConfig($form) {
     //—————————————————————————————————————— 高级设置 ——————————————————————————————————————
     
     // 添加自定义 DNS 预解析域名字段
-    $dnsPrefetch = new Typecho_Widget_Helper_Form_Element_Textarea('dnsPrefetch',NULL,NULL,_t('DNS预解析域名'),_t('请输入需要预解析的域名，每行一个。例如：<br>https://oneblog.net<br>https://cdn.oneblog.net')
+    $dnsPrefetch = new Typecho_Widget_Helper_Form_Element_Textarea('dnsPrefetch',NULL,NULL,_t('DNS预解析域名'),_t('请输入需要预解析的域名，每行一个。例如：<br>https://onenote.io<br>https://cdn.onenote.io')
     );
     $form->addInput($dnsPrefetch);
     

@@ -3,7 +3,7 @@
  *
  * 一款简约文艺的文字博客主题：那些物质的东西，都会随着时间慢慢销蚀，而我们写下的文字，最趋近于永恒。唯愿不忘初心，坚持把自己的博客写下去。本主题作者是一名律师，工作越来越忙，主题事宜请先仔细查阅官方文档，也可在QQ交流群939170079咨询博友。
  * 官网：<a href="https://onenote.io">onenote.io</a>
- * 文档：<a href="https://docs.oneblog.net">docs.oneblog.net</a>
+ * 文档：<a href="https://docs.onenote.io">docs.onenote.io</a>
  * 
  * @package OneBlog
  * @author 彼岸临窗
@@ -20,7 +20,7 @@ if ($this->is('index')){
     if ($this->options->switch == 'on') {
         $defaultThumb = Helper::options()->themeUrl . '/static/img/bg.jpg';
         $defaultPost = [
-            'link' => 'https://oneblog.net',
+            'link' => 'https://onenote.io',
             'title' => '请填写文章cid',
             'thumb' => $defaultThumb,
         ];
