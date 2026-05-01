@@ -1,6 +1,6 @@
 /**
  * Updated: 2026-01-22
- * Author: ©彼岸临窗 oneblog.net
+ * Author: ©彼岸临窗 onenote.io
  */
 document.addEventListener('DOMContentLoaded', function () {
     var commentList = document.querySelector('.comment-list');
