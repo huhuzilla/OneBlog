@@ -66,6 +66,7 @@ function themeConfig($form) {
     $backstr = file_exists($backPath) ? file_get_contents($backPath) : '';?>
 
     <link rel="stylesheet" href="https://cncdn.cc/oneblog/3.6.5/admin.css" type="text/css" />
+    <link rel="stylesheet" href="<?php echo Helper::options()->themeUrl('static/css/admin.css'); ?>" type="text/css" />
     <script src="https://cncdn.cc/jquery/3.7.1/dist/jquery.min.js" type="text/javascript"></script>
     <script src="https://cncdn.cc/layer/3.1.1/layer.js" type="text/javascript"></script>
     <script src="<?php echo Helper::options()->themeUrl('static/js/admin.js'); ?>" type="text/javascript"></script>
@@ -170,6 +171,10 @@ function themeConfig($form) {
     $RandomIMG = new Typecho_Widget_Helper_Form_Element_Radio('RandomIMG', array('oneblog' => '主题图库','off' => '关闭'),'off','随机高清缩略图', '设置后文章列表页在文章没有任何图片且没有单独设置封面时显示随机缩略图，如果想让文章详情页显示封面图，请编辑文章时填写自定义字段[文章封面]。');
     $form->addInput($RandomIMG);
     
+    // 自动夜间模式
+    $AutoNightMode = new Typecho_Widget_Helper_Form_Element_Radio('AutoNightMode', array('on' => '开启','off' => '关闭'),'off','自动夜间模式', '开启后，网站将在每天 19:00 至次日 05:00 自动启用夜间模式，其他时间自动关闭。');
+    $form->addInput($AutoNightMode);
+    
     // Cloudflare Turnstile 前端 Site Key
     $cfSiteKey = new Typecho_Widget_Helper_Form_Element_Text('CFSiteKey', NULL, '', _t('Cloudflare Turnstile SiteKey'), _t('填写 Turnstile 的 sitekey（用于前端）。留空则不启用 CF。'));
     $form->addInput($cfSiteKey);
@@ -221,6 +226,7 @@ function themeConfig($form) {
 //文章自定义字段
 function themeFields($layout) { ?>
     <link rel="stylesheet" href="https://cncdn.cc/oneblog/3.6.5/admin.css" type="text/css" />
+    <link rel="stylesheet" href="<?php echo Helper::options()->themeUrl('static/css/admin.css'); ?>" type="text/css" />
     <?php 
     $thumb = new Typecho_Widget_Helper_Form_Element_Text('thumb', NULL, NULL, _t('封面图片'), _t('此处填写后会让文章/独立页面详情样式显示为有封面图的样式效果，文章列表也会出现封面缩略图，搜索引擎抓取的也是该封面图。'));
  	$thumb->input->setAttribute('class', 'full-width-input');

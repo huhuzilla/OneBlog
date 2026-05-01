@@ -78,9 +78,14 @@ $thumb = showThumbnail($this);?>
 var logoUrl = "<?php echo $this->options->logo ? $this->options->logo : Helper::options()->themeUrl . '/static/img/logo.svg'; ?>";
 var logoWhiteUrl = "<?php echo $this->options->logoWhite ? $this->options->logoWhite : Helper::options()->themeUrl . '/static/img/logoWhite.svg'; ?>";
 var bannerSwitch = "<?php echo $this->options->switch; ?>";
+var autoNightMode = "<?php echo $this->options->AutoNightMode; ?>";
 (function() {
     var currentTheme = document.cookie.replace(/(?:(?:^|.*;\s*)eyeProtectMode\s*\=\s*([^;]*).*$)|^.*$/, "$1");
-    if (currentTheme === 'dark') {
+    var autoNightEnabled = typeof autoNightMode !== 'undefined' && autoNightMode === 'on';
+    var hasUserTheme = currentTheme === 'dark' || currentTheme === 'light';
+    var hour = new Date().getHours();
+    var autoNightActive = hour >= 19 || hour < 5;
+    if ((hasUserTheme && currentTheme === 'dark') || (!hasUserTheme && autoNightEnabled && autoNightActive)) {
         document.documentElement.classList.add('night');
     }
 })();

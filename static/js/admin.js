@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const tabs = [
         { id: 'tab1', label: '主题说明', selector: null }, // 第一个 Tab 是静态内容
         { id: 'base', label: '基础设置', selector: '[id*="logoStyle"],[id*="slogan"],[id*="logo"],[id*="logowhite"],[id*="MenuSet"],[id*="Favicon"],[id*="switch"],[id*="Banner"],[id*="Menu"],[id*="Tagbg"],[id*="Webthumb"],[id*="Webtime"],[id*="ICP"],[id*="WA"]'},
-        { id: 'pro', label: '高级设置', selector: '[id*="dnsPrefetch"],[id*="imgSmall"],[id*="BeCode"],[id*="RandomIMG"],[id*="CFSiteKey"],[id*="CFSecret"],[id*="GeetestID"],[id*="GeetestKEY"]' },
+        { id: 'pro', label: '高级设置', selector: '[id*="dnsPrefetch"],[id*="imgSmall"],[id*="BeCode"],[id*="RandomIMG"],[id*="AutoNightMode"],[id*="CFSiteKey"],[id*="CFSecret"],[id*="GeetestID"],[id*="GeetestKEY"]' },
         { id: 'social', label: '社交按钮', selector: '[id*="QQ"],[id*="Weixin"],[id*="Email"],[id*="Github"]' },
         { id: 'DIY', label: '样式定制', selector: '[id*="CSS"],[id*="JS"],[id*="themeColor"]' },
     ];
@@ -58,8 +58,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 默认显示第一个 Tab
     switchTab(tabs[0].id);
+    initSwitchRadios();
 
     // 切换 Tab 的函数
+
     function switchTab(tabId) {
         // 隐藏所有 Tab 内容
         document.querySelectorAll('.tab-pane').forEach(pane => {
@@ -70,10 +72,85 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById(tabId).classList.add('active');
 
         // 更新 Tab 导航的激活状态
+
         document.querySelectorAll('#tab-nav li a').forEach(a => {
             a.classList.remove('active');
         });
         document.querySelector(`#tab-nav a[href="#${tabId}"]`).classList.add('active');
+    }
+    function initSwitchRadios() {
+        const switchPanes = document.querySelectorAll('#base, #pro');
+        if (!switchPanes.length) return;
+
+        const radioGroups = Array.from(switchPanes).flatMap(pane => {
+            return Array.from(pane.querySelectorAll('input[type="radio"]'));
+        }).reduce((groups, radio) => {
+            if (!radio.name) return groups;
+            groups[radio.name] = groups[radio.name] || [];
+            groups[radio.name].push(radio);
+            return groups;
+        }, {});
+
+        Object.keys(radioGroups).forEach(name => {
+            const radios = radioGroups[name];
+            if (radios.length !== 2) return;
+
+            const offRadio = radios.find(radio => radio.value === 'off');
+            const onRadio = radios.find(radio => radio.value !== 'off');
+            if (!offRadio || !onRadio) return;
+
+            const option = radios[0].closest('.typecho-option');
+            if (!option || option.classList.contains('oneblog-switch-radio')) return;
+
+            const title = option.querySelector(':scope > .typecho-label') || option.querySelector('.typecho-label');
+            const wrap = document.createElement('div');
+            const button = document.createElement('button');
+
+            option.classList.add('oneblog-switch-radio');
+            wrap.className = 'oneblog-switch-wrap';
+            button.type = 'button';
+            button.className = 'oneblog-switch';
+            button.setAttribute('role', 'switch');
+
+            function placeSwitch() {
+                if (!title) {
+                    option.insertBefore(wrap, option.firstChild);
+                    return;
+                }
+
+                title.classList.add('oneblog-switch-label');
+                title.insertAdjacentElement('afterend', wrap);
+            }
+
+            function getRadioLabel(radio) {
+                return radio.closest('label') || (radio.id ? option.querySelector(`label[for="${radio.id}"]`) : null);
+            }
+
+
+            radios.forEach(radio => {
+                const label = getRadioLabel(radio);
+                radio.classList.add('oneblog-switch-original');
+                if (label) label.classList.add('oneblog-switch-original');
+            });
+
+            function sync() {
+                const isOn = onRadio.checked;
+                button.classList.toggle('is-on', isOn);
+                button.setAttribute('aria-checked', isOn ? 'true' : 'false');
+            }
+
+            button.addEventListener('click', () => {
+                const target = onRadio.checked ? offRadio : onRadio;
+                target.checked = true;
+                target.dispatchEvent(new Event('change', { bubbles: true }));
+                sync();
+            });
+
+            radios.forEach(radio => radio.addEventListener('change', sync));
+            wrap.appendChild(button);
+            placeSwitch();
+            sync();
+        });
     }
 });
 

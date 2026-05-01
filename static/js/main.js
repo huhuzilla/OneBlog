@@ -1004,19 +1004,19 @@ function getCookie(name) {
 }
 
 // 切换夜间模式的核心函数
-function toggleProtectEye(isDarkMode) {
+function toggleProtectEye(isDarkMode, saveCookie = true) {
     const htmlElement = document.documentElement;
     const logoElement = document.getElementById('logo');
     
     if (isDarkMode) {
         htmlElement.classList.add('night');
-        setCookie('eyeProtectMode', 'dark', 365);
+        if (saveCookie) setCookie('eyeProtectMode', 'dark', 365);
         if (logoElement) {
             logoElement.style.backgroundImage = `url(${logoWhiteUrl})`;
         }
     } else {
         htmlElement.classList.remove('night');
-        setCookie('eyeProtectMode', 'light', 365);
+        if (saveCookie) setCookie('eyeProtectMode', 'light', 365);
         if (logoElement) {
             logoElement.style.backgroundImage = `url(${logoUrl})`;
         }
@@ -1032,14 +1032,21 @@ function updateToggleState(isDarkMode) {
     if (toggle2) toggle2.checked = isDarkMode;
 }
 
+function isAutoNightTime() {
+    const hour = new Date().getHours();
+    return hour >= 19 || hour < 5;
+}
+
 function initProtectEye() {
     const currentTheme = getCookie('eyeProtectMode');
     const htmlElement = document.documentElement;
     const logoElement = document.getElementById('logo');
     
-    // 初始化状态
-    const isDarkMode = currentTheme === 'dark';
-    toggleProtectEye(isDarkMode);
+    // 初始化状态：访客手动选择过时优先使用 cookie，否则使用自动夜间模式默认值
+    const autoNightEnabled = typeof autoNightMode !== 'undefined' && autoNightMode === 'on';
+    const hasUserTheme = currentTheme === 'dark' || currentTheme === 'light';
+    const isDarkMode = hasUserTheme ? currentTheme === 'dark' : autoNightEnabled && isAutoNightTime();
+    toggleProtectEye(isDarkMode, false);
     updateToggleState(isDarkMode);
     
     // 为两个开关添加事件监听器
