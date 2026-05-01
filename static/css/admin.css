@@ -293,3 +293,70 @@ input[type="number"]:focus {
 
 
 
+
+/**字体预览**/
+.oneblog-font-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.oneblog-font-ready .oneblog-font-card {
+    display: block;
+    box-sizing: border-box;
+    min-height: 104px;
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    background: #fafafa;
+    cursor: pointer;
+    transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+}
+
+.oneblog-font-ready .oneblog-font-card input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+.oneblog-font-ready .oneblog-font-card::after {
+    content: attr(data-preview);
+    display: block;
+    margin-top: 8px;
+    color: #333;
+    font-size: 24px;
+    line-height: 1.6;
+}
+
+.oneblog-font-ready .oneblog-font-card.is-selected {
+    border-color: #2f80ed;
+    background: #f5f9ff;
+    box-shadow: 0 0 0 2px rgba(47, 128, 237, .1);
+}
+
+@media (max-width: 900px) {
+    .oneblog-font-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .oneblog-font-list {
+        grid-template-columns: 1fr;
+    }
+}
+.oneblog-font-ready input[name="FontFamily"] {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+}

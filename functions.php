@@ -1,7 +1,7 @@
 <?php if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 /**
  * Theme：OneBlog
- * Updated: 2026-01-22
+ * Updated: 2026-05-01
  * Author: ©彼岸临窗 onenote.io
  * 注释含命名规范，开源不易，如需引用请注明来源:彼岸临窗 https://onenote.io。
  * 本主题已取得软件著作权（登记号：2025SR0334142）和外观设计专利（专利号：第7121519号），请严格遵循GPL-2.0协议使用本主题及源码。
@@ -13,6 +13,64 @@ function parseThemeVersion() {
     $content = file_get_contents($indexFile);
     preg_match('/\* @version\s+([0-9.]+)/', $content, $matches);
     return $matches[1] ?? '1.0.0'; 
+}
+
+
+// 自定义字体，可自行拓展
+function oneblog_font_configs() {
+    return [
+        'default' => [
+            'name' => 'Default',
+            'css' => '',
+            'family' => ''
+        ],
+        'hwmct' => [
+            'name' => '汇文明朝体',
+            'css' => 'https://chinese-fonts-cdn.deno.dev/packages/hwmct/dist/%E6%B1%87%E6%96%87%E6%98%8E%E6%9C%9D%E4%BD%93/result.css',
+            'family' => 'Huiwen-mincho'
+        ],
+        'syst' => [
+            'name' => '思源宋体',
+            'css' => 'https://chinese-fonts-cdn.deno.dev/packages/syst/dist/SourceHanSerifCN/result.css',
+            'family' => 'Source Han Serif CN VF'
+        ],
+        'stdgt' => [
+            'name' => '上图东观体',
+            'css' => 'https://chinese-fonts-cdn.deno.dev/packages/stdgt/dist/上图东观体-常规/result.css',
+            'family' => 'STDongGuanTi'
+        ],
+        'xwwk' => [
+            'name' => '霞鹜文楷',
+            'css' => 'https://chinese-fonts-cdn.deno.dev/packages/lxgwwenkaibright/dist/LXGWBright-Medium/result.css',
+            'family' => 'LXGW Bright Medium'
+        ],
+        'xwxzs' => [
+            'name' => '霞鹜新致宋',
+            'css' => 'https://chinese-fonts-cdn.deno.dev/packages/LxgwNeoZhiSong/dist/LXGWNeoZhiSong/result.css',
+            'family' => 'LXGW Neo ZhiSong'
+        ],
+        'yxzk' => [
+            'name' => '原俠正楷',
+            'css' => 'https://chinese-fonts-cdn.deno.dev/packages/GuanKiapTsingKhai/dist/GuanKiapTsingKhai/result.css',
+            'family' => 'GuanKiapTsingKhai'
+        ],
+        'yxk' => [
+            'name' => '月星楷',
+            'css' => 'https://chinese-fonts-cdn.deno.dev/packages/moon-stars-kai/dist/MoonStarsKai-Regular/result.css',
+            'family' => 'Moon Stars Kai'
+        ],
+        'yjyhpws' => [
+            'name' => '极影毁片文宋',
+            'css' => 'https://chinese-fonts-cdn.deno.dev/packages/jyhpws/dist/极影毁片文宋/result.css',
+            'family' => '极影毁片文宋 Medium'
+        ]
+    ];
+}
+
+function oneblog_selected_font_config() {
+    $fonts = oneblog_font_configs();
+    $key = Helper::options()->FontFamily ?: 'default';
+    return $fonts[$key] ?? $fonts['default'];
 }
 
 //主题自定义
@@ -65,10 +123,12 @@ function themeConfig($form) {
     $themeConfStr = $db->fetchRow($db->select()->from('table.options')->where('name = ?', 'theme:' . $theTheme))['value'];
     $backstr = file_exists($backPath) ? file_get_contents($backPath) : '';?>
 
-    <link rel="stylesheet" href="https://cncdn.cc/oneblog/3.6.5/admin.css" type="text/css" />
     <link rel="stylesheet" href="<?php echo Helper::options()->themeUrl('static/css/admin.css'); ?>" type="text/css" />
     <script src="https://cncdn.cc/jquery/3.7.1/dist/jquery.min.js" type="text/javascript"></script>
     <script src="https://cncdn.cc/layer/3.1.1/layer.js" type="text/javascript"></script>
+    <script>
+    window.oneblogFontConfigs = <?php echo json_encode(oneblog_font_configs(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+    </script>
     <script src="<?php echo Helper::options()->themeUrl('static/js/admin.js'); ?>" type="text/javascript"></script>
     <div class="OneBlog"><h3>OneBlog 主题设置</h3></div>
     <div id="tab-container">
@@ -206,7 +266,14 @@ function themeConfig($form) {
     $form->addInput($Github);
     
     //—————————————————————————————————————— 自定义样式 ——————————————————————————————————————
-    // 自定义CSS
+    // 网站字体
+    $fontOptions = [];
+    foreach (oneblog_font_configs() as $key => $font) {
+        $fontOptions[$key] = $font['name'];
+    }
+    $FontFamily = new Typecho_Widget_Helper_Form_Element_Radio('FontFamily', $fontOptions, 'default', _t('文章字体'), _t('选择后将在文章列表页和详情页应用该字体。'));
+    $form->addInput($FontFamily);
+        // 自定义CSS
     $CSS = new Typecho_Widget_Helper_Form_Element_Textarea('CSS',NULL,NULL,_t('自定义CSS'),_t('可以填写css，覆盖默认的样式，本css优先级最高。')
     );
     $form->addInput($CSS);

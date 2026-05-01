@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
         { id: 'base', label: '基础设置', selector: '[id*="logoStyle"],[id*="slogan"],[id*="logo"],[id*="logowhite"],[id*="MenuSet"],[id*="Favicon"],[id*="switch"],[id*="Banner"],[id*="Menu"],[id*="Tagbg"],[id*="Webthumb"],[id*="Webtime"],[id*="ICP"],[id*="WA"]'},
         { id: 'pro', label: '高级设置', selector: '[id*="dnsPrefetch"],[id*="imgSmall"],[id*="BeCode"],[id*="RandomIMG"],[id*="AutoNightMode"],[id*="CFSiteKey"],[id*="CFSecret"],[id*="GeetestID"],[id*="GeetestKEY"]' },
         { id: 'social', label: '社交按钮', selector: '[id*="QQ"],[id*="Weixin"],[id*="Email"],[id*="Github"]' },
-        { id: 'DIY', label: '样式定制', selector: '[id*="CSS"],[id*="JS"],[id*="themeColor"]' },
+        { id: 'DIY', label: '样式定制', selector: '[id*="FontFamily"],[id*="CSS"],[id*="JS"],[id*="themeColor"]' },
     ];
     const form = document.querySelector('form'); 
     const tabContainer = document.getElementById('tab-container');
@@ -59,6 +59,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // 默认显示第一个 Tab
     switchTab(tabs[0].id);
     initSwitchRadios();
+    initFontPreview();
 
     // 切换 Tab 的函数
 
@@ -151,6 +152,48 @@ document.addEventListener('DOMContentLoaded', function () {
             placeSwitch();
             sync();
         });
+    }
+
+    function initFontPreview() {
+        const fontOption = document.querySelector('input[name="FontFamily"]')?.closest('.typecho-option');
+        const fonts = window.oneblogFontConfigs || {};
+        if (!fontOption || fontOption.classList.contains('oneblog-font-ready')) return;
+
+        Object.keys(fonts).forEach(key => {
+            const font = fonts[key];
+            if (!font || !font.css || document.querySelector(`link[data-oneblog-font="${key}"]`)) return;
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = font.css;
+            link.dataset.oneblogFont = key;
+            document.head.appendChild(link);
+        });
+
+        fontOption.classList.add('oneblog-font-ready');
+        const list = document.createElement('div');
+        list.className = 'oneblog-font-list';
+        const cards = [];
+        fontOption.querySelectorAll('input[type="radio"]').forEach(input => {
+            const label = input.closest('label') || (input.id ? fontOption.querySelector(`label[for="${input.id}"]`) : null);
+            if (!label) return;
+            const font = fonts[input.value] || {};
+            label.classList.add('oneblog-font-card');
+            label.style.fontFamily = font.family ? `'${font.family}', serif` : '';
+            label.dataset.preview = '\u611f\u53d7\u6587\u5b57\u7684\u6e29\u5ea6';
+            list.appendChild(label);
+            cards.push({ input, label });
+        });
+
+        if (cards.length) fontOption.appendChild(list);
+
+        function syncSelected() {
+            cards.forEach(({ input, label }) => {
+                label.classList.toggle('is-selected', input.checked);
+            });
+        }
+
+        cards.forEach(({ input }) => input.addEventListener('change', syncSelected));
+        syncSelected();
     }
 });
 
