@@ -35,7 +35,7 @@ OneBlog，一个博客，再无其他。本主题基于Typecho，设计初衷是
 
 ### 使用文档
 
-主题文档：[docs.oneblog.net](https://docs.oneblog.net)
+主题文档：[docs.onenote.io](https://docs.onenote.io)
 
 全网首发：[onenote.io/oneblog](https://onenote.io/oneblog)
 
