@@ -1,7 +1,7 @@
 <?php if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 /**
  * Theme：OneBlog
- * Updated: 2026-05-01
+ * Updated: 2026-05-02
  * Author: ©彼岸临窗 onenote.io
  * 注释含命名规范，开源不易，如需引用请注明来源:彼岸临窗 https://onenote.io。
  * 本主题已取得软件著作权（登记号：2025SR0334142）和外观设计专利（专利号：第7121519号），请严格遵循GPL-2.0协议使用本主题及源码。
@@ -420,7 +420,7 @@ function themeConfig($form) {
     $themeConfStr = $db->fetchRow($db->select()->from('table.options')->where('name = ?', 'theme:' . $theTheme))['value'];
     $backstr = file_exists($backPath) ? file_get_contents($backPath) : '';?>
 
-    <link rel="stylesheet" href="<?php echo Helper::options()->themeUrl('static/css/admin.css'); ?>" type="text/css" />
+    <link rel="stylesheet" href="https://cncdn.cc/oneblog/3.7.0/admin.css" type="text/css" />
     <script src="https://cncdn.cc/jquery/3.7.1/dist/jquery.min.js" type="text/javascript"></script>
     <script src="https://cncdn.cc/layer/3.1.1/layer.js" type="text/javascript"></script>
     <script>
@@ -593,8 +593,7 @@ function themeConfig($form) {
 
 //文章自定义字段
 function themeFields($layout) { ?>
-    <link rel="stylesheet" href="https://cncdn.cc/oneblog/3.6.5/admin.css" type="text/css" />
-    <link rel="stylesheet" href="<?php echo Helper::options()->themeUrl('static/css/admin.css'); ?>" type="text/css" />
+    <link rel="stylesheet" href="https://cncdn.cc/oneblog/3.7.0/admin.css" type="text/css" />
     <?php 
     $thumb = new Typecho_Widget_Helper_Form_Element_Text('thumb', NULL, NULL, _t('封面图片'), _t('此处填写后会让文章/独立页面详情样式显示为有封面图的样式效果，文章列表也会出现封面缩略图，搜索引擎抓取的也是该封面图。'));
  	$thumb->input->setAttribute('class', 'full-width-input');

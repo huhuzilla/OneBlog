@@ -39,8 +39,8 @@ foreach ($domains as $domain): ?>
 <link rel="stylesheet" href="https://cncdn.cc/swiper/8.3.2/swiper-bundle.min.css" /><!--轮播图-->
 <?php endif;?>
 <link rel="stylesheet" href="https://cncdn.cc/@fancyapps/fancybox/3.5.7/dist/jquery.fancybox.min.css" /><!--灯箱效果-->
-<link href="<?php echo Helper::options()->themeUrl('static/css/main.css');?>" rel="stylesheet"/><!--主题核心样式-->
-<link href="https://cncdn.cc/oneblog/3.6.5/m.css" rel="stylesheet"/><!--主题核心样式-->
+<link href="https://cncdn.cc/oneblog/3.7.0/main.css" rel="stylesheet"/><!--主题核心样式-->
+<link href="https://cncdn.cc/oneblog/3.7.0/m.css" rel="stylesheet"/><!--主题核心样式-->
 <?php $oneblogFont = oneblogFontSet(); ?>
 <?php if (!empty($oneblogFont['css'])): ?>
 <link rel="stylesheet" href="<?php echo htmlspecialchars($oneblogFont['css'], ENT_QUOTES, 'UTF-8'); ?>" />
