@@ -15,9 +15,8 @@ function parseThemeVersion() {
     return $matches[1] ?? '1.0.0'; 
 }
 
-
 // 自定义字体，可自行拓展
-function oneblog_font_configs() {
+function oneblogFonts() {
     return [
         'default' => [
             'name' => 'Default',
@@ -67,11 +66,309 @@ function oneblog_font_configs() {
     ];
 }
 
-function oneblog_selected_font_config() {
-    $fonts = oneblog_font_configs();
+// 获取当前设置的网站字体
+function oneblogFontSet() {
+    $fonts = oneblogFonts();
     $key = Helper::options()->FontFamily ?: 'default';
     return $fonts[$key] ?? $fonts['default'];
 }
+
+// 生成 sitemap.xml
+function oneblogSitemapBuild() {
+    $options = Helper::options();
+    $db = Typecho_Db::get();
+    $siteUrl = rtrim($options->siteUrl, '/');
+    $output = rtrim(__TYPECHO_ROOT_DIR__, '/\\') . '/sitemap.xml';
+    $seen = [];
+
+    $xml = new DOMDocument('1.0', 'UTF-8');
+    $xml->formatOutput = true;
+    $urlset = $xml->createElement('urlset');
+    $urlset->setAttribute('xmlns', 'http://www.sitemaps.org/schemas/sitemap/0.9');
+    $urlset->setAttribute('xmlns:image', 'http://www.google.com/schemas/sitemap-image/1.1');
+    $xml->appendChild($urlset);
+
+    oneblogSitemapAddUrl($xml, $urlset, $seen, $siteUrl . '/', time(), 'daily', '1.0');
+
+    $posts = $db->fetchAll(
+        $db->select('cid', 'slug', 'created', 'modified', 'text')
+            ->from('table.contents')
+            ->where('type = ?', 'post')
+            ->where('status = ?', 'publish')
+            ->where('(password IS NULL OR password = ?) ', '')
+            ->order('created', Typecho_Db::SORT_DESC)
+            ->limit(10000)
+    );
+    $thumbs = oneblogSitemapThumbs(array_column($posts, 'cid'));
+
+    foreach ($posts as $row) {
+        $postPermalink = Typecho_Router::url('post', $row, $options->index);
+        $postPermalink = oneblogSitemapUrl($postPermalink, $siteUrl);
+        $image = oneblogSitemapUrl((string) showThumbnail(oneblogSitemapWidget($row, $thumbs[$row['cid']] ?? ''), false), $siteUrl);
+        oneblogSitemapAddUrl($xml, $urlset, $seen, $postPermalink, oneblogSitemapLastmod($row), 'weekly', '0.8', $image ? [$image] : []);
+    }
+
+    $pages = $db->fetchAll(
+        $db->select('cid', 'slug', 'created', 'modified', 'text')
+            ->from('table.contents')
+            ->where('type = ?', 'page')
+            ->where('status = ?', 'publish')
+            ->where('(password IS NULL OR password = ?) ', '')
+            ->order('created', Typecho_Db::SORT_DESC)
+    );
+    $thumbs = oneblogSitemapThumbs(array_column($pages, 'cid'));
+
+    foreach ($pages as $row) {
+        $pagePermalink = Typecho_Router::url('page', $row, $options->index);
+        $pagePermalink = oneblogSitemapUrl($pagePermalink, $siteUrl);
+        $image = oneblogSitemapUrl((string) showThumbnail(oneblogSitemapWidget($row, $thumbs[$row['cid']] ?? ''), false), $siteUrl);
+        oneblogSitemapAddUrl($xml, $urlset, $seen, $pagePermalink, oneblogSitemapLastmod($row), 'monthly', '0.7', $image ? [$image] : []);
+    }
+
+    foreach (oneblogSitemapMetas('category') as $row) {
+        $categoryPermalink = Typecho_Router::url('category', $row, $options->index);
+        oneblogSitemapAddUrl($xml, $urlset, $seen, oneblogSitemapUrl($categoryPermalink, $siteUrl), oneblogSitemapLastmod($row), 'weekly', '0.6');
+    }
+
+    foreach (oneblogSitemapMetas('tag') as $row) {
+        $tagPermalink = Typecho_Router::url('tag', $row, $options->index);
+        oneblogSitemapAddUrl($xml, $urlset, $seen, oneblogSitemapUrl($tagPermalink, $siteUrl), oneblogSitemapLastmod($row), 'weekly', '0.5');
+    }
+
+    $saved = $xml->save($output) !== false;
+    if ($saved) {
+        @file_put_contents(oneblogSitemapMetaPath(), oneblogSitemapSign());
+        @touch(oneblogSitemapCheckPath());
+    }
+    return $saved;
+}
+
+// 对搜索引擎友好的链接结构和格式（含缩略图）
+function oneblogSitemapAddUrl($xml, $urlset, &$seen, $loc, $lastmod, $changefreq, $priority, $images = []) {
+    $loc = oneblogSitemapCleanUrl($loc);
+    if ($loc === '' || isset($seen[$loc])) {
+        return;
+    }
+    $seen[$loc] = true;
+
+    $url = $xml->createElement('url');
+    $locNode = $xml->createElement('loc');
+    $locNode->appendChild($xml->createTextNode($loc));
+    $url->appendChild($locNode);
+    $url->appendChild($xml->createElement('lastmod', oneblogSitemapFormatLastmod($lastmod)));
+    $url->appendChild($xml->createElement('changefreq', $changefreq));
+    $url->appendChild($xml->createElement('priority', $priority));
+
+    foreach (array_unique(array_filter($images)) as $image) {
+        $image = oneblogSitemapCleanUrl($image);
+        if ($image === '') continue;
+        $imageNode = $xml->createElementNS('http://www.google.com/schemas/sitemap-image/1.1', 'image:image');
+        $imageLoc = $xml->createElementNS('http://www.google.com/schemas/sitemap-image/1.1', 'image:loc');
+        $imageLoc->appendChild($xml->createTextNode($image));
+        $imageNode->appendChild($imageLoc);
+        $url->appendChild($imageNode);
+    }
+
+    $urlset->appendChild($url);
+}
+
+// 生成绝对路径的url
+function oneblogSitemapUrl($url, $siteUrl) {
+    $url = trim((string) $url);
+    if ($url === '') return '';
+
+    if (strpos($url, '//') === 0) {
+        return (parse_url($siteUrl, PHP_URL_SCHEME) ?: 'https') . ':' . $url;
+    }
+    if (preg_match('#^https?://#i', $url)) {
+        return $url;
+    }
+    return rtrim($siteUrl, '/') . '/' . ltrim($url, '/');
+}
+
+// 清理和验证URL，确保其为有效的绝对URL
+function oneblogSitemapCleanUrl($url) {
+    $url = trim((string) $url);
+    if ($url === '') return '';
+    $url = str_replace('&amp;', '&', $url);
+    return preg_match('#^https?://#i', $url) ? $url : '';
+}
+
+// 获取内容的最后修改时间，优先使用 modified 字段，如果没有则使用 created 字段
+function oneblogSitemapLastmod($row) {
+    $modified = isset($row['modified']) ? (int) $row['modified'] : 0;
+    $created = isset($row['created']) ? (int) $row['created'] : 0;
+    return $modified > 0 ? $modified : $created;
+}
+
+// 将时间戳格式化为符合 sitemap 要求的 ISO 8601 格式
+function oneblogSitemapFormatLastmod($time) {
+    $time = (int) $time;
+    return date('c', $time > 0 ? $time : time());
+}
+
+// 为 sitemap 复用 showThumbnail() 构造轻量内容对象
+function oneblogSitemapWidget($row, $thumb = '') {
+    return (object) [
+        'content' => $row['text'] ?? '',
+        'fields' => (object) ['thumb' => $thumb]
+    ];
+}
+
+// 批量预取自定义字段 thumb，供 sitemap 复用 showThumbnail() 时避免逐篇查询
+function oneblogSitemapThumbs($cids) {
+    $cids = array_values(array_unique(array_filter(array_map('intval', (array) $cids))));
+    if (empty($cids)) return [];
+
+    $db = Typecho_Db::get();
+    $prefix = $db->getPrefix();
+    $rows = $db->fetchAll($db->query(
+        'SELECT cid, str_value FROM `' . $prefix . 'fields` WHERE name = ' . oneblogSitemapQuote('thumb') . ' AND cid IN (' . implode(',', $cids) . ')'
+    ));
+
+    $siteUrl = rtrim(Helper::options()->siteUrl, '/');
+    $thumbs = [];
+    foreach ($rows as $row) {
+        if (empty($row['str_value'])) continue;
+        $thumbs[(int) $row['cid']] = oneblogSitemapUrl($row['str_value'], $siteUrl);
+    }
+    return $thumbs;
+}
+
+// 批量获取分类或标签的相关信息和最后修改时间，用于 sitemap 的分类和标签列表
+function oneblogSitemapMetas($type) {
+    $type = $type === 'tag' ? 'tag' : 'category';
+    $db = Typecho_Db::get();
+    $prefix = $db->getPrefix();
+    return $db->fetchAll($db->query(
+        'SELECT m.mid, m.name, m.slug, m.type, MAX(c.modified) AS modified, MAX(c.created) AS created, COUNT(c.cid) AS post_count '
+        . 'FROM `' . $prefix . 'metas` m '
+        . 'INNER JOIN `' . $prefix . 'relationships` r ON m.mid = r.mid '
+        . 'INNER JOIN `' . $prefix . 'contents` c ON r.cid = c.cid '
+        . 'WHERE m.type = ' . oneblogSitemapQuote($type) . ' '
+        . 'AND c.type = ' . oneblogSitemapQuote('post') . ' '
+        . 'AND c.status = ' . oneblogSitemapQuote('publish') . ' '
+        . 'AND (c.password IS NULL OR c.password = ' . oneblogSitemapQuote('') . ') '
+        . 'GROUP BY m.mid, m.name, m.slug, m.type '
+        . 'ORDER BY modified DESC, created DESC'
+    ));
+}
+
+// 检测内容是否变化以决定是否需要更新 sitemap
+function oneblogSitemapMetaPath() {
+    return rtrim(__TYPECHO_ROOT_DIR__, '/\\') . '/sitemap.meta';
+}
+
+// 控制 sitemap 检测频率，避免频繁检测导致性能问题
+function oneblogSitemapCheckPath() {
+    return rtrim(__TYPECHO_ROOT_DIR__, '/\\') . '/sitemap.check';
+}
+
+// 生成签名，避免每次都进行全文比较
+function oneblogSitemapSign() {
+    static $sign = null;
+    if ($sign !== null) return $sign;
+
+    $db = Typecho_Db::get();
+    $prefix = $db->getPrefix();
+
+    $contents = $db->fetchRow($db->query(
+        'SELECT COUNT(*) AS total, '
+        . 'MAX(CASE WHEN modified > 0 THEN modified ELSE created END) AS latest, '
+        . 'GROUP_CONCAT(cid ORDER BY cid) AS cids '
+        . 'FROM `' . $prefix . 'contents` '
+        . 'WHERE (type = ' . oneblogSitemapQuote('post') . ' OR type = ' . oneblogSitemapQuote('page') . ') '
+        . 'AND status = ' . oneblogSitemapQuote('publish') . ' '
+        . 'AND (password IS NULL OR password = ' . oneblogSitemapQuote('') . ')'
+    ));
+
+    $metas = $db->fetchRow($db->query(
+        'SELECT COUNT(DISTINCT m.mid) AS total, GROUP_CONCAT(DISTINCT m.mid ORDER BY m.mid) AS mids '
+        . 'FROM `' . $prefix . 'metas` m '
+        . 'INNER JOIN `' . $prefix . 'relationships` r ON m.mid = r.mid '
+        . 'INNER JOIN `' . $prefix . 'contents` c ON r.cid = c.cid '
+        . 'WHERE (m.type = ' . oneblogSitemapQuote('category') . ' OR m.type = ' . oneblogSitemapQuote('tag') . ') '
+        . 'AND c.type = ' . oneblogSitemapQuote('post') . ' '
+        . 'AND c.status = ' . oneblogSitemapQuote('publish') . ' '
+        . 'AND (c.password IS NULL OR c.password = ' . oneblogSitemapQuote('') . ')'
+    ));
+
+    return $sign = md5(json_encode([$contents, $metas]));
+}
+
+// 安全地引用字符串，避免SQL注入风险
+function oneblogSitemapQuote($value) {
+    return "'" . str_replace("'", "''", (string) $value) . "'";
+}
+
+// 更新 sitemap.xml 文件，如果发生异常则记录错误日志
+function oneblogSitemapUpdate() {
+    try {
+        return oneblogSitemapBuild();
+    } catch (Throwable $e) {
+        error_log('OneBlog sitemap update failed: ' . $e->getMessage());
+    } catch (Exception $e) {
+        error_log('OneBlog sitemap update failed: ' . $e->getMessage());
+    }
+    return false;
+}
+
+// 需要时触发更新
+function oneblogSitemapCheck() {
+    static $checked = false;
+    if ($checked) return;
+    $checked = true;
+
+    $checkPath = oneblogSitemapCheckPath();
+    if (file_exists($checkPath) && time() - (int) filemtime($checkPath) < oneblogSitemapInterval()) {
+        return;
+    }
+
+    @touch($checkPath);
+
+    $sitemapPath = rtrim(__TYPECHO_ROOT_DIR__, '/\\') . '/sitemap.xml';
+    if (!file_exists($sitemapPath)) {
+        oneblogSitemapQueue();
+        return;
+    }
+
+    try {
+        $metaPath = oneblogSitemapMetaPath();
+        if (!file_exists($metaPath) || trim((string) @file_get_contents($metaPath)) !== oneblogSitemapSign()) {
+            oneblogSitemapQueue();
+        }
+    } catch (Throwable $e) {
+        error_log('OneBlog sitemap stale check failed: ' . $e->getMessage());
+    } catch (Exception $e) {
+        error_log('OneBlog sitemap stale check failed: ' . $e->getMessage());
+    }
+}
+
+// 将更新任务加入队列，在脚本结束时统一执行，避免重复更新和性能问题
+function oneblogSitemapQueue() {
+    static $registered = false;
+    $GLOBALS['oneblog_sitemap_needs_update'] = true;
+
+    if (!$registered) {
+        register_shutdown_function('oneblogSitemapShutdown');
+        $registered = true;
+    }
+}
+
+// 在脚本结束时检查是否需要更新 sitemap，如果需要则执行更新
+function oneblogSitemapShutdown() {
+    if (!empty($GLOBALS['oneblog_sitemap_needs_update']) && !oneblogSitemapUpdate()) {
+        @unlink(oneblogSitemapCheckPath());
+    }
+}
+
+// 获取 sitemap 检测更新的时间间隔，默认为 86400 秒（24小时），可以通过后台设置调整，但不允许小于 1 秒以避免性能问题
+function oneblogSitemapInterval() {
+    $interval = (int) (Helper::options()->sitemapInterval ?: 86400);
+    return $interval > 0 ? $interval : 86400;
+}
+
+oneblogSitemapCheck();
 
 //主题自定义
 function themeConfig($form) {
@@ -127,7 +424,7 @@ function themeConfig($form) {
     <script src="https://cncdn.cc/jquery/3.7.1/dist/jquery.min.js" type="text/javascript"></script>
     <script src="https://cncdn.cc/layer/3.1.1/layer.js" type="text/javascript"></script>
     <script>
-    window.oneblogFontConfigs = <?php echo json_encode(oneblog_font_configs(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+    window.oneblogFontConfigs = <?php echo json_encode(oneblogFonts(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
     </script>
     <script src="<?php echo Helper::options()->themeUrl('static/js/admin.js'); ?>" type="text/javascript"></script>
     <div class="OneBlog"><h3>OneBlog 主题设置</h3></div>
@@ -218,6 +515,10 @@ function themeConfig($form) {
     $dnsPrefetch = new Typecho_Widget_Helper_Form_Element_Textarea('dnsPrefetch',NULL,NULL,_t('DNS预解析域名'),_t('请输入需要预解析的域名，每行一个。例如：<br>https://onenote.io<br>https://cdn.onenote.io')
     );
     $form->addInput($dnsPrefetch);
+
+    // Sitemap 检测更新频率
+    $sitemapInterval = new Typecho_Widget_Helper_Form_Element_Text('sitemapInterval', NULL, '86400', _t('Sitemap检测更新频率'), _t('单位为秒。填写 10 则每 10 秒检测一次公开内容是否变化；留空或小于 1 时默认 86400 秒。'));
+    $form->addInput($sitemapInterval);
     
     // 缩略图参数
     $imgSmall = new Typecho_Widget_Helper_Form_Element_Text('imgSmall', NULL, NULL, _t('缩略图参数'), _t('填写服务端支持的缩略图参数（如 !small），需搭配 CDN 或云存储图片处理功能使用。<br>留空则显示原图,填写后文章列表的缩略图会自动携带该参数，请确保文章内的图片支持缩略图处理。'));
@@ -268,7 +569,7 @@ function themeConfig($form) {
     //—————————————————————————————————————— 自定义样式 ——————————————————————————————————————
     // 网站字体
     $fontOptions = [];
-    foreach (oneblog_font_configs() as $key => $font) {
+    foreach (oneblogFonts() as $key => $font) {
         $fontOptions[$key] = $font['name'];
     }
     $FontFamily = new Typecho_Widget_Helper_Form_Element_Radio('FontFamily', $fontOptions, 'default', _t('文章字体'), _t('选择后将在文章列表页和详情页应用该字体。'));
@@ -627,19 +928,19 @@ function getGravatar($email, $s = 96, $d = 'mp', $r = 'g', $img = false, $atts =
 }
 
 //获取文章缩略图
-function showThumbnail($widget){
+function showThumbnail($widget, $allowRandom = true){
     // 如果文章设置了缩略图，优先返回缩略图
-    if ($widget->fields->thumb) {
+    if (!empty($widget->fields->thumb)) {
         return $widget->fields->thumb;
     }
     // 如果文章内容有图片，返回第一张图片作为缩略图
-    $content = $widget->content;
+    $content = $widget->content ?? '';
     preg_match_all('/<img.*?src=["\'](.*?)["\']/', $content, $matches);
     if (isset($matches[1][0])) {
         return $matches[1][0];
     }
     // 如果设置了随机缩略图
-    if (Helper::options()->RandomIMG == 'oneblog'){
+    if ($allowRandom && Helper::options()->RandomIMG == 'oneblog'){
         $randomParam = '?t=' . time() . rand(1, 1000);
         return Helper::options()->themeUrl . '/api/img.php' . $randomParam;
     }
