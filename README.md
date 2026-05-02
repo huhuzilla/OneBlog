@@ -1,6 +1,6 @@
 ## TYPECHO文字博客主题：OneBlog 一款简约清新文艺的写作记录类单栏主题
 
-<a href="https://onenote.io">![oneblog](https://blog.cncdn.cc/ui/black.svg)</a>
+<a href="https://onenote.io"><img src="https://blog.cncdn.cc/ui/black.svg" alt="oneblog" width="180"></a>
 
 ### 项目简介
 
