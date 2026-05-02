@@ -50,6 +50,9 @@ $this->need('header.php'); ?>
 			</li>
 		 ", 0); ?>
     </div>
+    <script>
+    window.oneblogLinkStatusUrl = <?php echo json_encode(rtrim($this->options->themeUrl, '/') . '/api/link-status.php'); ?>;
+    </script>
     <?php else:?>
 	<div class="nodata blur">
         <img src='<?php $this->options->themeUrl('static/img/nodata.svg'); ?>'></img>

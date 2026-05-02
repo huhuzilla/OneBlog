@@ -183,7 +183,7 @@ p {
     letter-spacing: 2px;
     line-height: 2em;
     text-align: justify;
-    margin-bottom: 2em;
+    margin-bottom: 1em;
     word-break: break-all;
 }
 
@@ -1838,6 +1838,41 @@ li.comment-child {
     border: 5px var(--bg-input) solid;
 }
 
+.link-avatar {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+}
+
+.link-avatar img {
+    display: block;
+}
+
+.link-status-dot {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--white);
+    border-radius: 50%;
+    background: #b8bec8;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+    box-sizing: border-box;
+}
+
+.link-status-dot.is-ok {
+    background: #30c85a;
+}
+
+.link-status-dot.is-error {
+    background: #ff4d4f;
+}
+
+.link-status-dot.is-warning {
+    background: #ee5568;
+}
+
 .link-info {
     display: flex;
     flex-direction: column;
@@ -1850,6 +1885,8 @@ li.comment-child {
     margin: 0 0 5px 0;
     font-size: 15px;
     font-weight: 600;
+    display: flex;
+    align-items: center;
 }
 
 .link-info span {
@@ -1859,6 +1896,17 @@ li.comment-child {
     text-overflow: ellipsis;
     max-width: 200px;
     color: var(--grey);
+}
+
+.link-info span.link-status-time {
+    margin-left: 6px;
+    font-size: 11px;
+    font-weight: 400;
+    background: #d1fae5;
+    color: #059669;
+    padding: 1px 4px;
+    letter-spacing: normal;
+    border-radius: 3px;
 }
 
 .link-request {

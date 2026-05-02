@@ -1071,6 +1071,123 @@ function initProtectEye() {
 document.addEventListener('DOMContentLoaded', initProtectEye);
 /**夜间模式结束**/
 
+function initLinkStatus() {
+    const links = Array.from(document.querySelectorAll('.links .link a[href]'));
+    if (!links.length) return;
+
+    function normalizeLinkUrl(url) {
+        url = (url || '').trim();
+        if (!url || url.charAt(0) === '#' || /^(mailto|tel|javascript):/i.test(url)) return '';
+        if (url.indexOf('//') === 0) return 'https:' + url;
+        if (!/^https?:\/\//i.test(url) && url.charAt(0) !== '/') return 'https://' + url;
+        return url;
+    }
+
+    const urls = [];
+    const linkMap = new Map();
+    const timeMap = new Map();
+
+    function setDots(url, status) {
+        (linkMap.get(url) || []).forEach(function(dot) {
+            dot.classList.remove('is-checking', 'is-ok', 'is-error', 'is-warning');
+            dot.classList.add(status);
+        });
+    }
+
+    function setTimes(url, status, time) {
+        (timeMap.get(url) || []).forEach(function(el) {
+            if (status === 'ok' && time) {
+                el.textContent = time;
+                el.style.display = '';
+            } else {
+                el.textContent = '';
+                el.style.display = 'none';
+            }
+        });
+    }
+
+    links.forEach(function(link) {
+        const img = link.querySelector('img');
+        if (!img) return;
+
+        let avatar = img.closest('.link-avatar');
+        if (!avatar) {
+            avatar = document.createElement('span');
+            avatar.className = 'link-avatar';
+            img.parentNode.insertBefore(avatar, img);
+            avatar.appendChild(img);
+        }
+
+        let dot = avatar.querySelector('.link-status-dot');
+        if (!dot) {
+            dot = document.createElement('span');
+            dot.className = 'link-status-dot is-checking';
+            avatar.appendChild(dot);
+        }
+
+        const title = link.querySelector('.link-info h3');
+        let timeEl = null;
+        if (title) {
+            timeEl = title.querySelector('.link-status-time');
+            if (!timeEl) {
+                timeEl = document.createElement('span');
+                timeEl.className = 'link-status-time';
+                timeEl.style.display = 'none';
+                title.appendChild(timeEl);
+            }
+        }
+
+        const url = normalizeLinkUrl(link.getAttribute('href'));
+        if (!url) return;
+        link.href = url;
+        urls.push(url);
+        if (!linkMap.has(url)) linkMap.set(url, []);
+        linkMap.get(url).push(dot);
+        if (timeEl) {
+            if (!timeMap.has(url)) timeMap.set(url, []);
+            timeMap.get(url).push(timeEl);
+        }
+    });
+
+    if (!urls.length) return;
+
+    const endpoint = window.oneblogLinkStatusUrl || '/usr/themes/OneBlog/api/link-status.php';
+    const params = new URLSearchParams();
+    Array.from(new Set(urls)).slice(0, 30).forEach(function(url) {
+        params.append('urls[]', url);
+    });
+
+    fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+        },
+        body: params.toString(),
+        credentials: 'same-origin'
+    })
+        .then(function(res) { return res.json(); })
+        .then(function(res) {
+            if (!res || !res.success || !res.items) return;
+            Object.keys(res.items).forEach(function(url) {
+                const status = res.items[url] === 'ok' ? 'ok' : 'warning';
+                setDots(url, status === 'ok' ? 'is-ok' : 'is-warning');
+                setTimes(url, status, res.times ? res.times[url] : '');
+            });
+        })
+        .catch(function() {
+            document.querySelectorAll('.link-status-dot.is-checking').forEach(function(dot) {
+                dot.classList.remove('is-checking');
+                dot.classList.add('is-warning');
+            });
+            document.querySelectorAll('.link-status-time').forEach(function(el) {
+                el.textContent = '';
+                el.style.display = 'none';
+            });
+        });
+}
+
+document.addEventListener('DOMContentLoaded', initLinkStatus);
+
 /**开源不易，请尊重作者的版权，保留本信息**/
 function showConsoleInfo() {
     const version = '3.6.5';
