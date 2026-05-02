@@ -41,7 +41,7 @@
 
 
 <?php $this->footer();?>
-<script src="https://cncdn.cc/jquery/3.7.0.1/dist/jquery.min.js"></script><!--基础依赖放在最前面-->
+<script src="https://cncdn.cc/jquery/3.7.1/dist/jquery.min.js"></script><!--基础依赖放在最前面-->
 <script src="https://cncdn.cc/@fancyapps/fancybox/3.5.7/dist/jquery.fancybox.min.js"></script><!--图片灯箱效果-->
 <script src="https://cncdn.cc/layer/3.1.1/layer.js"></script>
 <?php if ($this->is('index')):?>
