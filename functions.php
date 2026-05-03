@@ -929,7 +929,7 @@ function getGravatar($email, $s = 96, $d = 'mp', $r = 'g', $img = false, $atts =
 //获取文章缩略图
 function showThumbnail($widget, $allowRandom = true){
     // 如果文章设置了缩略图，优先返回缩略图
-    if (!empty($widget->fields->thumb)) {
+    if ($widget->fields->thumb) {
         return $widget->fields->thumb;
     }
     // 如果文章内容有图片，返回第一张图片作为缩略图
