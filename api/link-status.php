@@ -53,10 +53,6 @@ function oneblog_is_online_code($code) {
     return $code >= 200 && $code < 400;
 }
 
-function oneblog_curl_time($ch) {
-    return (int) round(((float) curl_getinfo($ch, CURLINFO_NAMELOOKUP_TIME)) * 1000) . ' ms';
-}
-
 function oneblog_curl_options($url, $isHead) {
     return [
         CURLOPT_URL => $url,
@@ -79,7 +75,6 @@ function oneblog_check_once($url, $isHead) {
 
     $result = [
         'code' => (int) curl_getinfo($ch, CURLINFO_HTTP_CODE),
-        'time' => oneblog_curl_time($ch),
     ];
 
     curl_close($ch);
@@ -115,7 +110,6 @@ function oneblog_check_multi($urls, $isHead) {
     foreach ($channels as $url => $ch) {
         $results[$url] = [
             'code' => (int) curl_getinfo($ch, CURLINFO_HTTP_CODE),
-            'time' => oneblog_curl_time($ch),
         ];
         curl_multi_remove_handle($mh, $ch);
         curl_close($ch);
@@ -128,36 +122,31 @@ function oneblog_check_multi($urls, $isHead) {
 function oneblog_https_handshake($url) {
     $parts = parse_url($url);
     $host = $parts['host'] ?? '';
-    if (!$host) return ['ok' => false, 'time' => '0 ms'];
+    if (!$host) return false;
 
-    $start = microtime(true);
     $port = !empty($parts['port']) ? (int) $parts['port'] : 443;
     $fp = @stream_socket_client('ssl://' . $host . ':' . $port, $errno, $error, 6, STREAM_CLIENT_CONNECT);
-    $time = (int) round((microtime(true) - $start) * 1000) . ' ms';
 
     if ($fp) {
         fclose($fp);
-        return ['ok' => true, 'time' => $time];
+        return true;
     }
 
-    return ['ok' => false, 'time' => $time];
+    return false;
 }
 
 function oneblog_build_result($url, $checks) {
-    $final = end($checks) ?: ['code' => 0, 'time' => '0 ms'];
+    $final = end($checks) ?: ['code' => 0];
     $online = oneblog_is_online_code($final['code']);
 
     if (!$online && (int) $final['code'] === 0) {
-        $handshake = oneblog_https_handshake($url);
-        if ($handshake['ok']) {
+        if (oneblog_https_handshake($url)) {
             $online = true;
-            $final['time'] = $handshake['time'];
         }
     }
 
     return [
         'status' => $online ? 'ok' : 'error',
-        'time' => $final['time'],
         'checked_at' => time(),
         'url' => $url,
     ];
@@ -190,7 +179,7 @@ if ($needCheck) {
     $needGet = [];
 
     foreach ($needCheck as $url) {
-        $head = $headResults[$url] ?? ['code' => 0, 'time' => '0 ms'];
+        $head = $headResults[$url] ?? ['code' => 0];
         $checksByUrl[$url] = [$head];
         if ($head['code'] === 0 || in_array($head['code'], [403, 405], true)) {
             $needGet[] = $url;
@@ -211,11 +200,13 @@ if ($needCheck) {
     }
 }
 
+foreach ($cache as &$cached) {
+    if (is_array($cached)) {
+        unset($cached['time']);
+    }
+}
+unset($cached);
+
 oneblog_save_cache($cache);
 
-$times = [];
-foreach ($urls as $url) {
-    $times[$url] = $cache[md5($url)]['time'] ?? '';
-}
-
-oneblog_json(['success' => true, 'items' => $items, 'times' => $times]);
+oneblog_json(['success' => true, 'items' => $items]);

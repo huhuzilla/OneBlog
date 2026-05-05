@@ -1085,24 +1085,11 @@ function initLinkStatus() {
 
     const urls = [];
     const linkMap = new Map();
-    const timeMap = new Map();
 
     function setDots(url, status) {
         (linkMap.get(url) || []).forEach(function(dot) {
             dot.classList.remove('is-checking', 'is-ok', 'is-error', 'is-warning');
             dot.classList.add(status);
-        });
-    }
-
-    function setTimes(url, status, time) {
-        (timeMap.get(url) || []).forEach(function(el) {
-            if (status === 'ok' && time) {
-                el.textContent = time;
-                el.style.display = '';
-            } else {
-                el.textContent = '';
-                el.style.display = 'none';
-            }
         });
     }
 
@@ -1125,28 +1112,12 @@ function initLinkStatus() {
             avatar.appendChild(dot);
         }
 
-        const title = link.querySelector('.link-info h3');
-        let timeEl = null;
-        if (title) {
-            timeEl = title.querySelector('.link-status-time');
-            if (!timeEl) {
-                timeEl = document.createElement('span');
-                timeEl.className = 'link-status-time';
-                timeEl.style.display = 'none';
-                title.appendChild(timeEl);
-            }
-        }
-
         const url = normalizeLinkUrl(link.getAttribute('href'));
         if (!url) return;
         link.href = url;
         urls.push(url);
         if (!linkMap.has(url)) linkMap.set(url, []);
         linkMap.get(url).push(dot);
-        if (timeEl) {
-            if (!timeMap.has(url)) timeMap.set(url, []);
-            timeMap.get(url).push(timeEl);
-        }
     });
 
     if (!urls.length) return;
@@ -1171,17 +1142,12 @@ function initLinkStatus() {
             Object.keys(res.items).forEach(function(url) {
                 const status = res.items[url] === 'ok' ? 'ok' : 'warning';
                 setDots(url, status === 'ok' ? 'is-ok' : 'is-warning');
-                setTimes(url, status, res.times ? res.times[url] : '');
             });
         })
         .catch(function() {
             document.querySelectorAll('.link-status-dot.is-checking').forEach(function(dot) {
                 dot.classList.remove('is-checking');
                 dot.classList.add('is-warning');
-            });
-            document.querySelectorAll('.link-status-time').forEach(function(el) {
-                el.textContent = '';
-                el.style.display = 'none';
             });
         });
 }
