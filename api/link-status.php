@@ -2,6 +2,7 @@
 header('Content-Type: application/json; charset=UTF-8');
 
 const ONEBLOG_LINK_STATUS_TTL = 86400;
+const ONEBLOG_LINK_STATUS_CACHE_VERSION = 2;
 
 function oneblog_json($data) {
     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -50,7 +51,13 @@ function oneblog_read_urls() {
 
 function oneblog_is_online_code($code) {
     $code = (int) $code;
-    return $code >= 200 && $code < 400;
+    if ($code === 0) return false;
+
+    if (in_array($code, [401, 403, 429], true)) {
+        return true;
+    }
+
+    return $code >= 200 && $code < 500 && $code !== 404;
 }
 
 function oneblog_curl_options($url, $isHead) {
@@ -64,7 +71,7 @@ function oneblog_curl_options($url, $isHead) {
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => false,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_USERAGENT => 'LinkCheck/1.0',
+        CURLOPT_USERAGENT => 'Oneblog-LinkChecker',
     ];
 }
 
@@ -148,6 +155,7 @@ function oneblog_build_result($url, $checks) {
     return [
         'status' => $online ? 'ok' : 'error',
         'checked_at' => time(),
+        'version' => ONEBLOG_LINK_STATUS_CACHE_VERSION,
         'url' => $url,
     ];
 }
@@ -166,7 +174,11 @@ foreach ($urls as $url) {
     $key = md5($url);
     $cached = $cache[$key] ?? null;
 
-    if (is_array($cached) && ($now - (int) ($cached['checked_at'] ?? 0)) < ONEBLOG_LINK_STATUS_TTL) {
+    if (
+        is_array($cached)
+        && (int) ($cached['version'] ?? 0) === ONEBLOG_LINK_STATUS_CACHE_VERSION
+        && ($now - (int) ($cached['checked_at'] ?? 0)) < ONEBLOG_LINK_STATUS_TTL
+    ) {
         $items[$url] = $cached['status'];
     } else {
         $needCheck[] = $url;
@@ -181,7 +193,7 @@ if ($needCheck) {
     foreach ($needCheck as $url) {
         $head = $headResults[$url] ?? ['code' => 0];
         $checksByUrl[$url] = [$head];
-        if ($head['code'] === 0 || in_array($head['code'], [403, 405], true)) {
+        if ($head['code'] === 0 || $head['code'] === 405) {
             $needGet[] = $url;
         }
     }
