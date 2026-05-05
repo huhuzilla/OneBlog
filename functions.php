@@ -727,13 +727,29 @@ function getTopTags() {
 }
 
 //文章内图片标签自动解析为灯箱效果
+//文章内图片标签自动解析为灯箱效果
 function AutoLightbox($content) {
-    if (empty($content)) {return $content;}
-    $pattern = '/<img.*?src=["\'](.*?)["\'].*?>/i';
-    if (!preg_match($pattern, $content)) {return $content;}
-    $replacement = '<a data-fancybox="gallery" href="$1"><img class="lazy-load" data-src="$1" src="$1" /></a>';
-    $content = preg_replace($pattern, $replacement, $content);
-    return $content;
+    if (empty($content) || stripos($content, '<img') === false) {
+        return $content;
+    }
+    $pattern = '/<img\b[^>]*src=["\']([^"\']+)["\'][^>]*>/i';
+    return preg_replace_callback($pattern, function ($matches) {
+        $imgTag = $matches[0];
+        $src = $matches[1];
+        $path = parse_url($src, PHP_URL_PATH);
+        //.svg后缀不加灯箱效果
+        if ($path && strtolower(pathinfo($path, PATHINFO_EXTENSION)) === 'svg') {
+            return $imgTag;
+        }
+        //.no-lightbox 类排除灯箱效果
+        if (preg_match('/class=["\'][^"\']*\bno-lightbox\b[^"\']*["\']/i', $imgTag)) {
+            return $imgTag;
+        }
+        if (preg_match('/data-fancybox/i', $imgTag)) {
+            return $imgTag;
+        }
+        return '<a data-fancybox="gallery" href="' . htmlspecialchars($src, ENT_QUOTES) . '">' . $imgTag . '</a>';
+    }, $content);
 }
 
 //表情短代码解析
