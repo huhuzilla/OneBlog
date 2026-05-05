@@ -25,42 +25,42 @@ function oneblogFonts() {
         ],
         'hwmct' => [
             'name' => '汇文明朝体',
-            'css' => 'https://chinese-fonts-cdn.deno.dev/packages/hwmct/dist/%E6%B1%87%E6%96%87%E6%98%8E%E6%9C%9D%E4%BD%93/result.css',
+            'css' => 'https://chinese-fonts-cdn.konghayao.deno.net/packages/hwmct/dist/%E6%B1%87%E6%96%87%E6%98%8E%E6%9C%9D%E4%BD%93/result.css',
             'family' => 'Huiwen-mincho'
         ],
         'syst' => [
             'name' => '思源宋体',
-            'css' => 'https://chinese-fonts-cdn.deno.dev/packages/syst/dist/SourceHanSerifCN/result.css',
+            'css' => 'https://chinese-fonts-cdn.konghayao.deno.net/packages/syst/dist/SourceHanSerifCN/result.css',
             'family' => 'Source Han Serif CN VF'
         ],
         'stdgt' => [
             'name' => '上图东观体',
-            'css' => 'https://chinese-fonts-cdn.deno.dev/packages/stdgt/dist/上图东观体-常规/result.css',
+            'css' => 'https://chinese-fonts-cdn.konghayao.deno.net/packages/stdgt/dist/上图东观体-常规/result.css',
             'family' => 'STDongGuanTi'
         ],
         'xwwk' => [
             'name' => '霞鹜文楷',
-            'css' => 'https://chinese-fonts-cdn.deno.dev/packages/lxgwwenkaibright/dist/LXGWBright-Medium/result.css',
+            'css' => 'https://chinese-fonts-cdn.konghayao.deno.net/packages/lxgwwenkaibright/dist/LXGWBright-Medium/result.css',
             'family' => 'LXGW Bright Medium'
         ],
         'xwxzs' => [
             'name' => '霞鹜新致宋',
-            'css' => 'https://chinese-fonts-cdn.deno.dev/packages/LxgwNeoZhiSong/dist/LXGWNeoZhiSong/result.css',
+            'css' => 'https://chinese-fonts-cdn.konghayao.deno.net/packages/LxgwNeoZhiSong/dist/LXGWNeoZhiSong/result.css',
             'family' => 'LXGW Neo ZhiSong'
         ],
         'yxzk' => [
             'name' => '原俠正楷',
-            'css' => 'https://chinese-fonts-cdn.deno.dev/packages/GuanKiapTsingKhai/dist/GuanKiapTsingKhai/result.css',
+            'css' => 'https://chinese-fonts-cdn.konghayao.deno.net/packages/GuanKiapTsingKhai/dist/GuanKiapTsingKhai/result.css',
             'family' => 'GuanKiapTsingKhai'
         ],
         'yxk' => [
             'name' => '月星楷',
-            'css' => 'https://chinese-fonts-cdn.deno.dev/packages/moon-stars-kai/dist/MoonStarsKai-Regular/result.css',
+            'css' => 'https://chinese-fonts-cdn.konghayao.deno.net/packages/moon-stars-kai/dist/MoonStarsKai-Regular/result.css',
             'family' => 'Moon Stars Kai'
         ],
         'yjyhpws' => [
             'name' => '极影毁片文宋',
-            'css' => 'https://chinese-fonts-cdn.deno.dev/packages/jyhpws/dist/极影毁片文宋/result.css',
+            'css' => 'https://chinese-fonts-cdn.konghayao.deno.net/packages/jyhpws/dist/极影毁片文宋/result.css',
             'family' => '极影毁片文宋 Medium'
         ]
     ];
