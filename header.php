@@ -58,6 +58,14 @@ $Webthumb = $this->options->Webthumb ? $this->options->Webthumb : Helper::option
 ?>
 <!--首页-->
 <?php if ($this->is('index')): ?>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "<?php $this->options->title(); ?>",
+  "url": "<?php $this->options->siteUrl(); ?>"
+}
+</script>
 <meta property="og:description" content="<?php echo $this->options->description(); ?>" />
 <meta property="og:image" content="<?php echo $Webthumb; ?>" />
 <meta name="image" content="<?php echo $Webthumb; ?>">
@@ -95,7 +103,8 @@ var autoNightMode = "<?php echo $this->options->AutoNightMode; ?>";
     }
 })();
 </script>
-<?php $this->header();?>
+<!-- 仅输出必要头部信息 -->
+<?php $this->header('generator=&pingback=&xmlrpc=&wlw=&rss1=&atom='); ?>
 </head>
 <body>
 <?php $hasLoaded = !empty($_COOKIE['jsLoaded']); ?>
