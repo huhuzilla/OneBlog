@@ -8,7 +8,7 @@
  * 
  * @package OneBlog
  * @author 彼岸临窗
- * @version 3.7.1
+ * @version 3.7.0
  * @link https://onenote.io
  */
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;

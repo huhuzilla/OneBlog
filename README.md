@@ -8,7 +8,7 @@ OneBlog，一个博客，再无其他。本主题基于Typecho，设计初衷是
 
 **官网**：[onenote.io](https://onenote.io/)
 
-**最新版本：V3.7.1**
+**最新版本：V3.7.0**
 
 ### 主题特性
 
