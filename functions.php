@@ -491,6 +491,25 @@ function themeConfig($form) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['_ajax'])) {
         if (ob_get_length()) ob_clean();
         header('Content-Type:application/json; charset=utf-8');
+
+        $requestUrl = Typecho_Request::getInstance()->getRequestUrl();
+        $security = Helper::security();
+        $token = isset($_POST['_']) ? (string) $_POST['_'] : '';
+        $validTokens = [$security->getToken($requestUrl)];
+        if (!empty($_SERVER['HTTP_REFERER'])) {
+            $validTokens[] = $security->getToken($_SERVER['HTTP_REFERER']);
+        }
+        if ($token === '' || !in_array($token, $validTokens, true)) {
+            echo json_encode(['success'=>false, 'message'=>'安全令牌无效，请刷新页面后重试'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        $user = Typecho_Widget::widget('Widget_User');
+        if (!$user->hasLogin()) {
+            echo json_encode(['success'=>false, 'message'=>'请先登录后台'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
         $theTheme = 'OneBlog';
         $db = Typecho_Db::get();
         $uploadDir = Helper::options()->uploadDir ?: 'usr/uploads';
@@ -501,13 +520,14 @@ function themeConfig($form) {
         }
         $backPath = $absUploadDir . '/BackupSetting_' . $theTheme . '.txt';
         $ret = ['success'=>false, 'message'=>'未知错误'];
-        if ($_POST['action'] === 'oneblog_theme_backup') {
+        $action = isset($_POST['action']) ? $_POST['action'] : '';
+        if ($action === 'oneblog_theme_backup') {
             $themeConfStr = $db->fetchRow($db->select()->from('table.options')->where('name = ?', 'theme:' . $theTheme))['value'];
             $ok = file_put_contents($backPath, $themeConfStr);
             $ret = $ok !== false
                 ? ['success'=>true, 'message'=>'备份成功']
                 : ['success'=>false, 'message'=>'备份失败，uploads 目录不可写'];
-        } elseif ($_POST['action'] === 'oneblog_theme_restore') {
+        } elseif ($action === 'oneblog_theme_restore') {
             if (file_exists($backPath)) {
                 $str = file_get_contents($backPath);
                 $updateThemeConQuery = $db->update('table.options')->rows(['value'=>$str])->where('name=?', 'theme:' . $theTheme);
@@ -541,6 +561,7 @@ function themeConfig($form) {
     <script src="https://cncdn.cc/layer/3.1.1/layer.js" type="text/javascript"></script>
     <script>
     window.oneblogFontConfigs = <?php echo json_encode(oneblogFonts(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+    window.oneblogAdminToken = <?php echo json_encode(Helper::security()->getToken(Typecho_Request::getInstance()->getRequestUrl())); ?>;
     </script>
     <script src="<?php echo Helper::options()->themeUrl('static/js/admin.js'); ?>" type="text/javascript"></script>
     <div class="OneBlog"><h3>OneBlog 主题设置</h3></div>
@@ -875,7 +896,9 @@ function parseEmojis($content) {
     $emojiPath = Helper::options()->siteUrl.'usr/themes/OneBlog/static/img/emoji/';
     return preg_replace_callback('/\[emoji:([a-zA-Z0-9_]+)\]/', function($matches) use ($emojiPath) {
         $emojiName = $matches[1];
-        return '<img class="biaoqing" src="' . $emojiPath . $emojiName . '.svg" alt="' . $emojiName . '">';
+        $src = htmlspecialchars($emojiPath . $emojiName . '.svg', ENT_QUOTES, 'UTF-8');
+        $alt = htmlspecialchars($emojiName, ENT_QUOTES, 'UTF-8');
+        return '<img class="biaoqing" src="' . $src . '" alt="' . $alt . '">';
     }, $content);
 }
 
@@ -1108,56 +1131,95 @@ function themeInit($archive) {
 //评论点赞 cookie保证点赞数量准确
 function commentLikesNum($coid, &$record = NULL){
     $db = Typecho_Db::get();
+    $record = array();
     $callback = array(
         'likes' => 0,
         'recording' => false
     );
-    if (array_key_exists('likes', $data = $db->fetchRow($db->select()->from('table.comments')->where('coid = ?', $coid)))) {
-        $callback['likes'] = $data['likes'];
-    } else {
-        $db->query('ALTER TABLE `' . $db->getPrefix() . 'comments` ADD `likes` INT(10) NOT NULL DEFAULT 0;');
+    $data = $db->fetchRow($db->select()->from('table.comments')->where('coid = ?', $coid));
+    if (is_array($data)) {
+        if (array_key_exists('likes', $data)) {
+            $callback['likes'] = $data['likes'];
+        } else {
+            $db->query('ALTER TABLE `' . $db->getPrefix() . 'comments` ADD `likes` INT(10) NOT NULL DEFAULT 0;');
+        }
     }
     if (empty($recording = Typecho_Cookie::get('__typecho_comment_likes_record'))) {
         Typecho_Cookie::set('__typecho_comment_likes_record', '[]');
     } else {
-        $callback['recording'] = is_array($record = json_decode($recording)) && in_array($coid, $record);
+        $record = json_decode($recording, true);
+        if (!is_array($record)) {
+            $record = array();
+        }
+        $callback['recording'] = in_array((int)$coid, array_map('intval', $record));
     }
     return $callback;
 }
 
 //评论点赞处理
 function commentLikes($archive){
-    $archive->response->setStatus(200); 
-    $_POST['coid'];
-    $_POST['behavior'];
-    $loginState = Typecho_Widget::widget('Widget_User')->hasLogin();
-    $res1 = commentLikesNum($_POST['coid'], $record);
+    $archive->response->setStatus(200);
+    header('Content-Type: application/json; charset=UTF-8');
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+
+    if (!$archive->request->isPost()) {
+        $archive->response->throwJson(array(
+            "state" => "error",
+            "message" => "Method not allowed"
+        ));
+    }
+
+    $coid = isset($_POST['coid']) ? (int) $_POST['coid'] : 0;
+    $behavior = isset($_POST['behavior']) ? trim($_POST['behavior']) : '';
     $num = 0;
-    if(!empty($_POST['coid']) && !empty($_POST['behavior'])){
+    if(!empty($coid) && $behavior === 'dz'){
+        $res1 = commentLikesNum($coid, $record);
+        if ($res1['recording']) {
+            $archive->response->throwJson(array(
+                "state" => "error",
+                "message" => "你已经点过赞啦！",
+                "num" => $res1['likes']
+            ));
+        }
+
         $db = Typecho_Db::get();
         $prefix = $db->getPrefix();
-        $coid = (int)$_POST['coid'];
         if (!array_key_exists('likes', $db->fetchRow($db->select()->from('table.comments')))) {
         $db->query('ALTER TABLE `' . $prefix . 'comments` ADD `likes` INT(30) DEFAULT 0;');
         }
         $row = $db->fetchRow($db->select('likes')->from('table.comments')->where('coid = ?', $coid));
+        if (!$row) {
+            $archive->response->throwJson(array(
+                "state" => "error",
+                "message" => "评论不存在",
+                "num" => 0
+            ));
+        }
         $updateRows = $db->query($db->update('table.comments')->rows(array('likes' => (int) $row['likes'] + 1))->where('coid = ?', $coid));
         if($updateRows){
             $num = $row['likes'] + 1;
             $state =  "success";
-            array_push($record, $coid);
-            Typecho_Cookie::set('__typecho_comment_likes_record', json_encode($record));
+            $record[] = $coid;
+            Typecho_Cookie::set('__typecho_comment_likes_record', json_encode(array_values(array_unique($record))));
         }else{
             $num = $row['likes'];
             $state =  "error";
+            $message = "点赞失败，请稍后重试";
         }
     }else{
-        $state = 'Illegal request';
+        $state = 'error';
+        $message = 'Illegal request';
     }  
-    $archive->response->throwJson(array(
+    $result = array(
        "state" => $state,
        "num" => $num
-    ));    
+    );
+    if (!empty($message)) {
+        $result["message"] = $message;
+    }
+    $archive->response->throwJson($result);    
 }
 
 // 微语数据加载
