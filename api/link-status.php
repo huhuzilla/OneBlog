@@ -1,8 +1,5 @@
 <?php
 header('Content-Type: application/json; charset=UTF-8');
-header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-header('Pragma: no-cache');
-header('Expires: 0');
 
 const ONEBLOG_LINK_STATUS_TTL = 86400;
 const ONEBLOG_LINK_STATUS_CACHE_VERSION = 2;
