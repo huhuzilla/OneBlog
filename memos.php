@@ -12,6 +12,12 @@ $memosImageEnabled = isset($export['activated']['MemosImage']);
 ob_start();
 $this->commentUrl();
 $oneblogCommentUrl = ob_get_clean();
+ob_start();
+$this->options->loginAction();
+$oneblogLoginAction = ob_get_clean();
+ob_start();
+Helper::options()->index('?commentLike=dz');
+$oneblogCommentLikeUrl = ob_get_clean();
 ?>
 <meta name="csrf-token" content="<?php echo htmlspecialchars(Helper::security()->getToken($this->request->getRequestUrl()), ENT_QUOTES, 'UTF-8'); ?>">
 <meta name="comment-url" content="<?php echo htmlspecialchars($oneblogCommentUrl, ENT_QUOTES, 'UTF-8'); ?>">
@@ -84,15 +90,23 @@ $oneblogCommentUrl = ob_get_clean();
 </div>
 
 <script>
-    var loginAction = <?php echo json_encode($this->options->loginAction(), JSON_UNESCAPED_SLASHES); ?>;
-    var commentLikeUrl = <?php echo json_encode(Helper::options()->index . '?commentLike=dz', JSON_UNESCAPED_SLASHES); ?>;
+    var loginAction = <?php echo json_encode($oneblogLoginAction, JSON_UNESCAPED_SLASHES); ?>;
+    var commentLikeUrl = <?php echo json_encode($oneblogCommentLikeUrl, JSON_UNESCAPED_SLASHES); ?>;
     <?php if ($memosImageEnabled) : ?>
     <?php $plugin = $this->options->plugin('MemosImage'); ?>
+    <?php
+    ob_start();
+    Helper::options()->index('/action/memos-upload');
+    $oneblogMemosUploadUrl = ob_get_clean();
+    ob_start();
+    Helper::options()->index('/action/memos-sign');
+    $oneblogMemosSignUrl = ob_get_clean();
+    ?>
     window.memosConfig = Object.assign({}, window.memosConfig || {}, {
         enabled: true,
         memosUseCos: <?php echo json_encode(($plugin->uploadMode ?: 'local') === 'cos'); ?>,
-        memosUploadUrl: <?php echo json_encode(Helper::options()->index . '/action/memos-upload', JSON_UNESCAPED_SLASHES); ?>,
-        memosSignUrl: <?php echo json_encode(Helper::options()->index . '/action/memos-sign', JSON_UNESCAPED_SLASHES); ?>
+        memosUploadUrl: <?php echo json_encode($oneblogMemosUploadUrl, JSON_UNESCAPED_SLASHES); ?>,
+        memosSignUrl: <?php echo json_encode($oneblogMemosSignUrl, JSON_UNESCAPED_SLASHES); ?>
     });
     <?php endif; ?>
 </script>

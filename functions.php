@@ -492,10 +492,14 @@ function themeConfig($form) {
         if (ob_get_length()) ob_clean();
         header('Content-Type:application/json; charset=utf-8');
 
+        $requestUrl = Typecho_Request::getInstance()->getRequestUrl();
         $security = Helper::security();
-        try {
-            $security->protect();
-        } catch (Exception $e) {
+        $token = isset($_POST['_']) ? (string) $_POST['_'] : '';
+        $validTokens = [$security->getToken($requestUrl)];
+        if (!empty($_SERVER['HTTP_REFERER'])) {
+            $validTokens[] = $security->getToken($_SERVER['HTTP_REFERER']);
+        }
+        if ($token === '' || !in_array($token, $validTokens, true)) {
             echo json_encode(['success'=>false, 'message'=>'安全令牌无效，请刷新页面后重试'], JSON_UNESCAPED_UNICODE);
             exit;
         }
