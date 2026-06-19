@@ -115,7 +115,7 @@ function oneblog_is_public_url($url) {
         return oneblog_is_public_ip($host);
     }
 
-    $records = @dns_get_record($host, DNS_A + DNS_AAAA);
+    $records = oneblog_dns_records($host);
     if (!$records) return false;
 
     foreach ($records as $record) {
@@ -137,7 +137,7 @@ function oneblog_resolve_public_ips($url) {
         return oneblog_is_public_ip($host) ? [$host] : [];
     }
 
-    $records = @dns_get_record($host, DNS_A + DNS_AAAA);
+    $records = oneblog_dns_records($host);
     if (!$records) return [];
 
     $ips = [];
@@ -150,6 +150,17 @@ function oneblog_resolve_public_ips($url) {
     }
 
     return array_values(array_unique($ips));
+}
+
+function oneblog_dns_records($host) {
+    static $cache = [];
+    $key = strtolower($host);
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+
+    $records = @dns_get_record($host, DNS_A + DNS_AAAA);
+    return $cache[$key] = is_array($records) ? $records : [];
 }
 
 function oneblog_read_urls() {

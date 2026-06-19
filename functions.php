@@ -747,6 +747,9 @@ function themeFields($layout) { ?>
 
 //自定义菜单
 function CustomMenu() {
+    static $cachedMenu = null;
+    if ($cachedMenu !== null) return $cachedMenu;
+
     $menuItems = Typecho_Widget::widget('Widget_Options')->MenuSet;
     $hasIcon = '';
     $noIcon = '';
@@ -773,7 +776,7 @@ function CustomMenu() {
             );
         }
     }
-    return [
+    return $cachedMenu = [
         'hasIcon' => $hasIcon ? $hasIcon : '',
         'noIcon'  => $noIcon ? $noIcon : ''
     ];
@@ -844,6 +847,12 @@ function get_banner_data($options) {
 
 // 查询文章数最多的前10个标签
 function getTopTags() {
+    static $cachedHtml = null;
+    if ($cachedHtml !== null) {
+        echo $cachedHtml;
+        return;
+    }
+
     $db = Typecho_Db::get();
     
     // 直接查询前10个热门标签的名称和slug
@@ -856,11 +865,13 @@ function getTopTags() {
     $tags = $db->fetchAll($query);
     
     // 输出标签链接
+    $html = '';
     foreach ($tags as $tag) {
         $tagUrl = Typecho_Common::url('tag/' . urlencode($tag['slug']), Helper::options()->index);
-        echo '<a href="' . $tagUrl . '"># ' . htmlspecialchars($tag['name']) . '</a>';
-        echo "\n"; // 换行分隔
+        $html .= '<a href="' . $tagUrl . '"># ' . htmlspecialchars($tag['name']) . '</a>' . "\n";
     }
+    $cachedHtml = $html;
+    echo $html;
 }
 
 //文章内图片标签自动解析为灯箱效果
@@ -907,23 +918,21 @@ function get_post_view($archive) {
     $cid = $archive->cid;
     $db = Typecho_Db::get();
     $prefix = $db->getPrefix();
-    
-    // 确保views字段存在
-    try {
-        $db->fetchRow($db->select()->from('table.contents')->where('cid = ?', $cid));
-    } catch (Typecho_Db_Exception $e) {
+
+    static $hasViewsField = null;
+    if ($hasViewsField === null) {
         try {
-            $db->query('ALTER TABLE ' . $prefix . 'contents ADD views INT DEFAULT 0;');
+            $db->fetchRow($db->select('views')->from('table.contents')->limit(1));
+            $hasViewsField = true;
         } catch (Typecho_Db_Exception $e) {
-            // 忽略重复字段错误
+            $hasViewsField = false;
         }
     }
 
-    // 双重验证字段
-    $fieldCheck = $db->fetchRow($db->select()->from('table.contents')->where('cid = ?', $cid));
-    if (!array_key_exists('views', $fieldCheck)) {
+    if (!$hasViewsField) {
         try {
             $db->query('ALTER TABLE ' . $prefix . 'contents ADD views INT DEFAULT 0;');
+            $hasViewsField = true;
         } catch (Typecho_Db_Exception $e) {
             echo 0;
             return;
@@ -931,8 +940,14 @@ function get_post_view($archive) {
     }
 
     // 获取当前阅读数
-    $row = $db->fetchRow($db->select('views')->from('table.contents')->where('cid = ?', $cid));
-    $currentViews = (int) $row['views'];
+    static $viewCache = [];
+    if (isset($viewCache[$cid])) {
+        $currentViews = $viewCache[$cid];
+    } else {
+        $row = $db->fetchRow($db->select('views')->from('table.contents')->where('cid = ?', $cid));
+        $currentViews = (int) ($row['views'] ?? 0);
+        $viewCache[$cid] = $currentViews;
+    }
     $shouldCount = false;
     $views = [];
     
@@ -948,6 +963,7 @@ function get_post_view($archive) {
             
             $views[] = $cid;
             Typecho_Cookie::set('extend_contents_views', implode(',', $views));
+            $viewCache[$cid] = $currentViews + 1;
         }
     }
     $displayViews = $currentViews + ($shouldCount ? 1 : 0);
@@ -1083,15 +1099,28 @@ function getGravatar($email, $s = 96, $d = 'mp', $r = 'g', $img = false, $atts =
 
 //获取文章缩略图
 function showThumbnail($widget, $allowRandom = true){
+    static $thumbnailCache = [];
+    $cacheKey = null;
+    if (isset($widget->cid)) {
+        $cacheKey = (int) $widget->cid . ':' . ($allowRandom ? '1' : '0');
+        if (array_key_exists($cacheKey, $thumbnailCache)) {
+            return $thumbnailCache[$cacheKey];
+        }
+    }
+
     // 如果文章设置了缩略图，优先返回缩略图
     if ($widget->fields->thumb) {
-        return $widget->fields->thumb;
+        $thumb = $widget->fields->thumb;
+        if ($cacheKey !== null) $thumbnailCache[$cacheKey] = $thumb;
+        return $thumb;
     }
     // 如果文章内容有图片，返回第一张图片作为缩略图
     $content = $widget->content ?? '';
     preg_match_all('/<img.*?src=["\'](.*?)["\']/', $content, $matches);
     if (isset($matches[1][0])) {
-        return $matches[1][0];
+        $thumb = $matches[1][0];
+        if ($cacheKey !== null) $thumbnailCache[$cacheKey] = $thumb;
+        return $thumb;
     }
     // 如果设置了随机缩略图
     if ($allowRandom && Helper::options()->RandomIMG == 'oneblog'){
@@ -1099,6 +1128,7 @@ function showThumbnail($widget, $allowRandom = true){
         return Helper::options()->themeUrl . '/api/img.php' . $randomParam;
     }
     // 如果没有任何图片，则返回NULL。
+    if ($cacheKey !== null) $thumbnailCache[$cacheKey] = null;
     return;
 }
 
