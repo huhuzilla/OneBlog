@@ -278,7 +278,7 @@ jQuery(function($){
             if(confirm('确定要备份当前主题配置吗？')) doBackup();
         }
         function doBackup(){
-            $.post(location.href, {action:'oneblog_theme_backup', _ajax:1, _: window.oneblogAdminToken || ''}, function(res){
+            $.post(location.href, {action:'oneblog_theme_backup', _ajax:1}, function(res){
                 if(res && res.success){
                     showResult(res.message, 1, true);
                 }else{
@@ -300,7 +300,7 @@ jQuery(function($){
             if(confirm('确定要恢复主题配置吗？恢复操作不可逆，请谨慎！')) doRestore();
         }
         function doRestore(){
-            $.post(location.href, {action:'oneblog_theme_restore', _ajax:1, _: window.oneblogAdminToken || ''}, function(res){
+            $.post(location.href, {action:'oneblog_theme_restore', _ajax:1}, function(res){
                 if(res && res.success){
                     showResult(res.message, 1, true);
                 }else{
