@@ -1137,8 +1137,10 @@ function initLinkStatus() {
 
     fetch(endpoint, {
         method: 'POST',
+        cache: 'no-store',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'X-Requested-With': 'XMLHttpRequest'
         },
         body: params.toString(),
         credentials: 'same-origin'
