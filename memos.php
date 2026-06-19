@@ -9,16 +9,19 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 $this->need('header.php');
 $export = Typecho_Plugin::export();
 $memosImageEnabled = isset($export['activated']['MemosImage']);
+ob_start();
+$this->commentUrl();
+$oneblogCommentUrl = ob_get_clean();
 ?>
-<meta name="csrf-token" content="<?php echo Helper::security()->getToken($this->request->getRequestUrl()); ?>">
-<meta name="comment-url" content="<?php $this->commentUrl(); ?>">
+<meta name="csrf-token" content="<?php echo htmlspecialchars(Helper::security()->getToken($this->request->getRequestUrl()), ENT_QUOTES, 'UTF-8'); ?>">
+<meta name="comment-url" content="<?php echo htmlspecialchars($oneblogCommentUrl, ENT_QUOTES, 'UTF-8'); ?>">
 
 <div class="main">
 <?php $this->need('module/head2.php'); ?>
 
 <div class="page_thumb blur">
     <div class="post_bg lazy-load"
-         data-src="<?php echo $this->fields->thumb ? $this->fields->thumb : Helper::options()->themeUrl . '/static/img/memos.jpg'; ?>">
+         data-src="<?php echo htmlspecialchars($this->fields->thumb ? $this->fields->thumb : Helper::options()->themeUrl . '/static/img/memos.jpg', ENT_QUOTES, 'UTF-8'); ?>">
     </div>
 
     <div class="pc">
@@ -31,7 +34,7 @@ $memosImageEnabled = isset($export['activated']['MemosImage']);
                 </h1>
             <?php else : ?>
                 <a class="logo" href="<?php $this->options->siteUrl(); ?>">
-                    <img src="<?php echo $this->options->logoWhite ?: Helper::options()->themeUrl . '/static/img/logoWhite.svg'; ?>">
+                    <img src="<?php echo htmlspecialchars($this->options->logoWhite ?: Helper::options()->themeUrl . '/static/img/logoWhite.svg', ENT_QUOTES, 'UTF-8'); ?>">
                 </a>
             <?php endif; ?>
         </div>
@@ -81,15 +84,15 @@ $memosImageEnabled = isset($export['activated']['MemosImage']);
 </div>
 
 <script>
-    var loginAction = "<?php echo $this->options->loginAction(); ?>";
-    var commentLikeUrl = "<?php Helper::options()->index('?commentLike=dz'); ?>";
+    var loginAction = <?php echo json_encode($this->options->loginAction(), JSON_UNESCAPED_SLASHES); ?>;
+    var commentLikeUrl = <?php echo json_encode(Helper::options()->index . '?commentLike=dz', JSON_UNESCAPED_SLASHES); ?>;
     <?php if ($memosImageEnabled) : ?>
     <?php $plugin = $this->options->plugin('MemosImage'); ?>
     window.memosConfig = Object.assign({}, window.memosConfig || {}, {
         enabled: true,
-        memosUseCos: "<?php echo $plugin->uploadMode ?: 'local'; ?>" === 'cos',
-        memosUploadUrl: "<?php Helper::options()->index('/action/memos-upload'); ?>",
-        memosSignUrl: "<?php Helper::options()->index('/action/memos-sign'); ?>"
+        memosUseCos: <?php echo json_encode(($plugin->uploadMode ?: 'local') === 'cos'); ?>,
+        memosUploadUrl: <?php echo json_encode(Helper::options()->index . '/action/memos-upload', JSON_UNESCAPED_SLASHES); ?>,
+        memosSignUrl: <?php echo json_encode(Helper::options()->index . '/action/memos-sign', JSON_UNESCAPED_SLASHES); ?>
     });
     <?php endif; ?>
 </script>

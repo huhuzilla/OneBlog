@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function () {
 <script src="<?php $this->options->themeUrl('/static/js/comments.js?v=3.7.0'); ?>"></script>
 <?php endif;?>
 
-<script src="<?php $this->options->themeUrl('/static/js/main.js?v=3.7.0'); ?>"></script><!--主题js-->
+<script src="<?php $this->options->themeUrl('/static/js/main.js?v=3.7.1'); ?>"></script><!--主题js-->
 
 <!-- 版权信息 -->
 <div id="copyright-info" style="display: none;">
@@ -96,9 +96,12 @@ document.addEventListener('DOMContentLoaded', function () {
 </div>
 
 <script type="text/javascript">
-$(document).on('click', '#qq', function() {layer.msg('<?php $this->options->QQ();?>',{time:4000});});       
-$(document).on('click', '#wxmp', function() {layer.open({type: 1,title: false,closeBtn: 0,shadeClose: true,skin: 'layui-layer-nobg',area: ['auto'], content: '<img id= "mywxmp" style="width:20rem;height:20rem;display:block;" src="<?php $this->options->Weixin();?>">'});});
-$(document).on('click', '#tomail', function() {layer.msg('联系邮箱：<?php $this->options->Email();?>',{time:4000});});       
+$(document).on('click', '#qq', function() {layer.msg(<?php echo json_encode((string) $this->options->QQ, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,{time:4000});});       
+$(document).on('click', '#wxmp', function() {
+    var wxmpUrl = <?php echo json_encode((string) $this->options->Weixin, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+    layer.open({type: 1,title: false,closeBtn: 0,shadeClose: true,skin: 'layui-layer-nobg',area: ['auto'], content: $('<img>', {id: 'mywxmp', src: wxmpUrl}).css({width:'20rem',height:'20rem',display:'block'})});
+});
+$(document).on('click', '#tomail', function() {layer.msg('联系邮箱：' + <?php echo json_encode((string) $this->options->Email, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>,{time:4000});});       
 </script>
 <!--自定义JS代码-->
 <?php if (!empty($this->options->JS)): ?>

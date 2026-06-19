@@ -956,6 +956,10 @@ $(document).ready(function() {
         $.ajax({
             url: commentLikeUrl,
             type: "POST",
+            cache: false,
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            },
             data: {
                 coid: coid,
                 behavior: 'dz'
@@ -973,7 +977,10 @@ $(document).ready(function() {
                     }
                 }
             },
-            error: function(err) {
+            error: function(xhr) {
+                if (window.console && console.warn) {
+                    console.warn("Comment like request failed", xhr.status, xhr.responseText);
+                }
                 alert("点赞失败，请稍后重试");
             }
         });
