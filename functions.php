@@ -551,7 +551,7 @@ function themeConfig($form) {
                 <h2>OneBlog V<?php echo parseThemeVersion();?></h2>
                 <p>本主题精心打磨多年，且持续优化，现免费开源，致敬互联网社区开源精神，也致敬热爱生活和记录的我们。</p>
                 <p>使用教程请前往<b></b>主题文档</b>：<a href="https://docs.onenote.io" target="_blank">docs.onenote.io</a> 获取，主题最新版本请前往Github仓库：<a href="https://github.com/cnxcdn/OneBlog" target="_blank">OneBlog（最新）</a> 或 <a href="https://gitcode.com/cncdn/OneBlog" target="_blank">国内镜像仓库（延迟一天同步）</a>查看，记得★Star，既是对作者的支持，也方便记住来时的路。本主题几乎所有代码都清晰地注释了，因此博友们完全可以以OneBlog为基础二次开发或单独开发属于自己的主题，但希望大家注明来源，保留基本的版权信息。</p>
-                <p>本主题目前仅有QQ交流群：<b>939170079</b>，其他均不是官方群组，此外，还可以通过<a href="https://litebbs.com" target="_blank">LiteBBS</a>讨论交流。本主题的介绍、后续的更新或周边插件的开发更新，除了QQ群公告，还会同步发布在<a href="https://litebbs.com" target="_blank">LiteBBS</a>，欢迎大家参与讨论。</p>
+                <p>如需获取本主题更多的教程资源，可加入官方QQ交流群：<b>939170079</b>，私信群主获取邀请码后，加入<a href="https://litebbs.com" target="_blank">轻论坛</a>讨论交流。本主题的介绍、后续的更新或周边插件的开发更新，会优先发布在<a href="https://litebbs.com" target="_blank">轻论坛</a>，欢迎大家参与讨论。</p>
                 <div class="backup">
                     <div class="backup-listen">
                         <b>主题设置备份与恢复：</b>

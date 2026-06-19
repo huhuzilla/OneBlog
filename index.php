@@ -1,9 +1,10 @@
 <?php
 /**
  *
- * 一款简约文艺的文字博客主题：那些物质的东西，都会随着时间慢慢销蚀，而我们写下的文字，最趋近于永恒。唯愿不忘初心，坚持把自己的博客写下去。本主题作者是一名律师，工作越来越忙，主题事宜请先仔细查阅官方文档，也可在QQ交流群939170079咨询博友。
- * 官网：<a href="https://onenote.io">onenote.io</a>
+ * 一款简约文艺的文字博客主题，主题事宜请先仔细查阅官方文档，无法解决的优先提issue或在<a href="https://litebbs.com/">轻论坛</a>搜索教程、寻求帮助，论坛邀请码可以找群主获取，QQ交流群：939170079。
  * 文档：<a href="https://docs.onenote.io">docs.onenote.io</a>
+ * 论坛：<a href="https://litebbs.com/">litebbs.com</a>
+ * 主题效果：<a href="https://onenote.io">onenote.io</a>
  * 
  * @package OneBlog
  * @author 彼岸临窗
