@@ -1136,10 +1136,13 @@ function commentLikesNum($coid, &$record = NULL){
         'likes' => 0,
         'recording' => false
     );
-    if (array_key_exists('likes', $data = $db->fetchRow($db->select()->from('table.comments')->where('coid = ?', $coid)))) {
-        $callback['likes'] = $data['likes'];
-    } else {
-        $db->query('ALTER TABLE `' . $db->getPrefix() . 'comments` ADD `likes` INT(10) NOT NULL DEFAULT 0;');
+    $data = $db->fetchRow($db->select()->from('table.comments')->where('coid = ?', $coid));
+    if (is_array($data)) {
+        if (array_key_exists('likes', $data)) {
+            $callback['likes'] = $data['likes'];
+        } else {
+            $db->query('ALTER TABLE `' . $db->getPrefix() . 'comments` ADD `likes` INT(10) NOT NULL DEFAULT 0;');
+        }
     }
     if (empty($recording = Typecho_Cookie::get('__typecho_comment_likes_record'))) {
         Typecho_Cookie::set('__typecho_comment_likes_record', '[]');
@@ -1170,9 +1173,9 @@ function commentLikes($archive){
 
     $coid = isset($_POST['coid']) ? (int) $_POST['coid'] : 0;
     $behavior = isset($_POST['behavior']) ? trim($_POST['behavior']) : '';
-    $res1 = commentLikesNum($coid, $record);
     $num = 0;
     if(!empty($coid) && $behavior === 'dz'){
+        $res1 = commentLikesNum($coid, $record);
         if ($res1['recording']) {
             $archive->response->throwJson(array(
                 "state" => "error",
