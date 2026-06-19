@@ -40,12 +40,84 @@ function oneblog_normalize_url($url) {
     return $url;
 }
 
+function oneblog_is_public_ip($ip) {
+    if (!filter_var($ip, FILTER_VALIDATE_IP)) return false;
+
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        return (bool) filter_var(
+            $ip,
+            FILTER_VALIDATE_IP,
+            FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+        );
+    }
+
+    return (bool) filter_var(
+        $ip,
+        FILTER_VALIDATE_IP,
+        FILTER_FLAG_IPV6 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+    );
+}
+
+function oneblog_is_public_url($url) {
+    $parts = parse_url($url);
+    if (!$parts || empty($parts['scheme']) || empty($parts['host'])) return false;
+
+    $scheme = strtolower($parts['scheme']);
+    if (!in_array($scheme, ['http', 'https'], true)) return false;
+    if (!empty($parts['user']) || !empty($parts['pass'])) return false;
+
+    $port = isset($parts['port']) ? (int) $parts['port'] : ($scheme === 'https' ? 443 : 80);
+    if (!in_array($port, [80, 443], true)) return false;
+
+    $host = trim($parts['host'], '[]');
+    if (filter_var($host, FILTER_VALIDATE_IP)) {
+        return oneblog_is_public_ip($host);
+    }
+
+    $records = @dns_get_record($host, DNS_A + DNS_AAAA);
+    if (!$records) return false;
+
+    foreach ($records as $record) {
+        $ip = $record['ip'] ?? ($record['ipv6'] ?? '');
+        if (!$ip || !oneblog_is_public_ip($ip)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function oneblog_resolve_public_ips($url) {
+    $parts = parse_url($url);
+    if (!$parts || empty($parts['host'])) return [];
+
+    $host = trim($parts['host'], '[]');
+    if (filter_var($host, FILTER_VALIDATE_IP)) {
+        return oneblog_is_public_ip($host) ? [$host] : [];
+    }
+
+    $records = @dns_get_record($host, DNS_A + DNS_AAAA);
+    if (!$records) return [];
+
+    $ips = [];
+    foreach ($records as $record) {
+        $ip = $record['ip'] ?? ($record['ipv6'] ?? '');
+        if (!$ip || !oneblog_is_public_ip($ip)) {
+            return [];
+        }
+        $ips[] = $ip;
+    }
+
+    return array_values(array_unique($ips));
+}
+
 function oneblog_read_urls() {
     $urls = $_POST['urls'] ?? ($_GET['urls'] ?? []);
     if (!empty($_REQUEST['url'])) $urls[] = $_REQUEST['url'];
     if (!is_array($urls)) $urls = [$urls];
 
     $urls = array_values(array_unique(array_filter(array_map('oneblog_normalize_url', $urls))));
+    $urls = array_values(array_filter($urls, 'oneblog_is_public_url'));
     return array_slice($urls, 0, 30);
 }
 
@@ -61,18 +133,35 @@ function oneblog_is_online_code($code) {
 }
 
 function oneblog_curl_options($url, $isHead) {
-    return [
+    $options = [
         CURLOPT_URL => $url,
         CURLOPT_TIMEOUT => 8,
         CURLOPT_CONNECTTIMEOUT => 5,
         CURLOPT_NOBODY => $isHead,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_MAXREDIRS => 3,
+        CURLOPT_FOLLOWLOCATION => false,
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_SSL_VERIFYHOST => false,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_USERAGENT => 'Oneblog-LinkChecker',
     ];
+
+    if (defined('CURLOPT_RESOLVE')) {
+        $parts = parse_url($url);
+        $host = $parts['host'] ?? '';
+        $scheme = strtolower($parts['scheme'] ?? 'http');
+        $port = !empty($parts['port']) ? (int) $parts['port'] : ($scheme === 'https' ? 443 : 80);
+        if ($host) {
+            $resolve = [];
+            foreach (oneblog_resolve_public_ips($url) as $ip) {
+                $resolve[] = $host . ':' . $port . ':' . $ip;
+            }
+            if ($resolve) {
+                $options[CURLOPT_RESOLVE] = $resolve;
+            }
+        }
+    }
+
+    return $options;
 }
 
 function oneblog_check_once($url, $isHead) {
@@ -132,7 +221,17 @@ function oneblog_https_handshake($url) {
     if (!$host) return false;
 
     $port = !empty($parts['port']) ? (int) $parts['port'] : 443;
-    $fp = @stream_socket_client('ssl://' . $host . ':' . $port, $errno, $error, 6, STREAM_CLIENT_CONNECT);
+    $ips = oneblog_resolve_public_ips($url);
+    if (!$ips) return false;
+
+    $context = stream_context_create([
+        'ssl' => [
+            'peer_name' => $host,
+            'verify_peer' => false,
+            'verify_peer_name' => false,
+        ],
+    ]);
+    $fp = @stream_socket_client('ssl://' . $ips[0] . ':' . $port, $errno, $error, 6, STREAM_CLIENT_CONNECT, $context);
 
     if ($fp) {
         fclose($fp);
