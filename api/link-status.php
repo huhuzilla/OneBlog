@@ -29,7 +29,45 @@ function oneblog_load_cache() {
 }
 
 function oneblog_save_cache($cache) {
-    @file_put_contents(oneblog_cache_path(), json_encode($cache, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    $path = oneblog_cache_path();
+    $dir = dirname($path);
+    if (!is_dir($dir) || !is_writable($dir)) return false;
+
+    $lockPath = $path . '.lock';
+    $lock = @fopen($lockPath, 'c');
+    if (!$lock) return false;
+
+    $ok = false;
+    if (@flock($lock, LOCK_EX)) {
+        $tmp = tempnam($dir, 'oneblog-link-status-');
+        if ($tmp !== false) {
+            $json = json_encode($cache, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            if ($json !== false && @file_put_contents($tmp, $json, LOCK_EX) !== false) {
+                $ok = @rename($tmp, $path);
+            }
+            if (!$ok && is_file($tmp)) {
+                @unlink($tmp);
+            }
+        }
+        @flock($lock, LOCK_UN);
+    }
+    @fclose($lock);
+
+    return $ok;
+}
+
+function oneblog_prune_cache($cache, $now) {
+    $maxAge = ONEBLOG_LINK_STATUS_TTL * 7;
+    foreach ($cache as $key => $cached) {
+        if (
+            !is_array($cached)
+            || (int) ($cached['version'] ?? 0) !== ONEBLOG_LINK_STATUS_CACHE_VERSION
+            || ($now - (int) ($cached['checked_at'] ?? 0)) > $maxAge
+        ) {
+            unset($cache[$key]);
+        }
+    }
+    return $cache;
 }
 
 function oneblog_normalize_url($url) {
@@ -74,7 +112,7 @@ function oneblog_is_public_url($url) {
         return oneblog_is_public_ip($host);
     }
 
-    $records = @dns_get_record($host, DNS_A + DNS_AAAA);
+    $records = oneblog_dns_records($host);
     if (!$records) return false;
 
     foreach ($records as $record) {
@@ -96,7 +134,7 @@ function oneblog_resolve_public_ips($url) {
         return oneblog_is_public_ip($host) ? [$host] : [];
     }
 
-    $records = @dns_get_record($host, DNS_A + DNS_AAAA);
+    $records = oneblog_dns_records($host);
     if (!$records) return [];
 
     $ips = [];
@@ -109,6 +147,17 @@ function oneblog_resolve_public_ips($url) {
     }
 
     return array_values(array_unique($ips));
+}
+
+function oneblog_dns_records($host) {
+    static $cache = [];
+    $key = strtolower($host);
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+
+    $records = @dns_get_record($host, DNS_A + DNS_AAAA);
+    return $cache[$key] = is_array($records) ? $records : [];
 }
 
 function oneblog_read_urls() {
@@ -268,6 +317,7 @@ $cache = oneblog_load_cache();
 $items = [];
 $needCheck = [];
 $now = time();
+$cache = oneblog_prune_cache($cache, $now);
 
 foreach ($urls as $url) {
     $key = md5($url);

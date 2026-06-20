@@ -1135,13 +1135,20 @@ function initLinkStatus() {
         params.append('urls[]', url);
     });
 
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(function() {
+        controller.abort();
+    }, 10000) : null;
+
     fetch(endpoint, {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'X-Requested-With': 'XMLHttpRequest'
         },
         body: params.toString(),
-        credentials: 'same-origin'
+        credentials: 'same-origin',
+        signal: controller ? controller.signal : undefined
     })
         .then(function(res) { return res.json(); })
         .then(function(res) {
@@ -1156,6 +1163,9 @@ function initLinkStatus() {
                 dot.classList.remove('is-checking');
                 dot.classList.add('is-warning');
             });
+        })
+        .finally(function() {
+            if (timeoutId) clearTimeout(timeoutId);
         });
 }
 
