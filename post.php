@@ -25,7 +25,7 @@ $this->need('header.php'); ?>
                     <span>/</span>
                     <span><?php $this->commentsNum('0 评论', '1 评论', '%d 评论'); ?></span>
                     <span>/</span>
-                    <span><?php echo art_count($this->cid); ?>&nbsp;字</span>
+                    <span><?php echo art_count($this->cid, $this->row['text'] ?? null); ?>&nbsp;字</span>
                 </div>
             </div>
         </div>
@@ -62,7 +62,7 @@ $this->need('header.php'); ?>
             <span><?php $this->date('Y年m月d日'); ?></span>
             <span><?php get_post_view($this) ?>&nbsp;阅读</span>
             <span><?php $this->commentsNum('0 评论', '1 评论', '%d 评论'); ?></span>
-            <span><?php echo art_count($this->cid); ?>&nbsp;字</span>
+            <span><?php echo art_count($this->cid, $this->row['text'] ?? null); ?>&nbsp;字</span>
         </div>
     </div>
     <?php endif;?>

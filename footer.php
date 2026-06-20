@@ -57,6 +57,15 @@ var bannerSwitch = '<?= $this->options->switch === 'on' ? 'on' : 'off' ?>';
 <script defer>
 document.addEventListener('DOMContentLoaded', function () {
     const codeBlocks = document.querySelectorAll('pre code');
+    if (!codeBlocks.length || typeof hljs === 'undefined') return;
+    if (!('IntersectionObserver' in window)) {
+        codeBlocks.forEach(function (codeBlock) {
+            hljs.highlightElement(codeBlock);
+            codeBlock.style.filter = 'none';
+        });
+        return;
+    }
+
     const observer = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
             if (entry.isIntersecting) {

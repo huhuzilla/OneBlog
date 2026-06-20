@@ -289,55 +289,94 @@ function renderBanner(options = {}) {
 }
 
 // 懒加载逻辑
-function initLazyLoad() {
-    const lazyImages = Array.from(document.querySelectorAll('.lazy-load:not(.loaded):not(.failed)'));
-    let loading = false;
+let oneblogLazyObserver = null;
+let oneblogLazyLoading = false;
+let oneblogLazyQueue = [];
 
-    // 队列中第一个进入视口的图片加载
-    function tryLoadNext() {
-        if (loading) return;
-        const next = lazyImages.find(img => img.classList.contains('in-view') && !img.classList.contains('loaded') && !img.classList.contains('failed'));
-        if (!next) return;
-        loading = true;
-        const src = next.getAttribute('data-src');
-        const tempImg = new Image();
-        tempImg.src = src;
-        tempImg.onload = () => {
-            if (next.tagName.toLowerCase() === 'img') {
-                next.src = src;
-            } else {
-                next.style.backgroundImage = `url('${src}')`;
-            }
-            next.classList.add('loaded');
-            loading = false;
-            tryLoadNext();
-        };
-        tempImg.onerror = () => {
-            if (next.tagName.toLowerCase() === 'img') {
-                next.src = '/usr/themes/OneBlog/static/img/error.jpg'; 
-            } else {
-                next.style.backgroundImage = `url('/usr/themes/OneBlog/static/img/error.jpg')`;
-            }
-            next.classList.add('failed');
-            loading = false;
-            tryLoadNext();
-        };
+function oneblogSetLazyImage(el, src) {
+    if (!src) return false;
+    if (el.tagName.toLowerCase() === 'img') {
+        el.src = src;
+    } else {
+        el.style.backgroundImage = `url('${src}')`;
+    }
+    return true;
+}
+
+function oneblogFinishLazyImage(el, state) {
+    el.classList.remove('in-view', 'observed');
+    el.classList.add(state);
+    if (oneblogLazyObserver) {
+        oneblogLazyObserver.unobserve(el);
+    }
+}
+
+function oneblogLoadLazyImage(el) {
+    const src = el.getAttribute('data-src');
+    if (!src) {
+        oneblogFinishLazyImage(el, 'failed');
+        return;
     }
 
-    // 只标记进入视口，不立即加载
-    const io = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('in-view');
-                tryLoadNext();
-            }
+    const tempImg = new Image();
+    tempImg.onload = () => {
+        oneblogSetLazyImage(el, src);
+        oneblogFinishLazyImage(el, 'loaded');
+        oneblogLazyLoading = false;
+        oneblogTryLoadNextLazyImage();
+    };
+    tempImg.onerror = () => {
+        oneblogSetLazyImage(el, '/usr/themes/OneBlog/static/img/error.jpg');
+        oneblogFinishLazyImage(el, 'failed');
+        oneblogLazyLoading = false;
+        oneblogTryLoadNextLazyImage();
+    };
+    tempImg.src = src;
+}
+
+function oneblogTryLoadNextLazyImage() {
+    if (oneblogLazyLoading) return;
+    oneblogLazyQueue = oneblogLazyQueue.filter(el => el && !el.classList.contains('loaded') && !el.classList.contains('failed'));
+    const next = oneblogLazyQueue.find(el => el.classList.contains('in-view'));
+    if (!next) return;
+    oneblogLazyLoading = true;
+    oneblogLoadLazyImage(next);
+}
+
+function initLazyLoad(context) {
+    const root = context && context.querySelectorAll ? context : document;
+    const lazyImages = Array.from(root.querySelectorAll('.lazy-load:not(.loaded):not(.failed):not(.observed)'));
+    if (!lazyImages.length) return;
+
+    if (!('IntersectionObserver' in window)) {
+        lazyImages.forEach(el => {
+            const ok = oneblogSetLazyImage(el, el.getAttribute('data-src'));
+            el.classList.add(ok ? 'loaded' : 'failed');
         });
-    }, {
-        rootMargin: '0px',
-        threshold: 0.1
+        return;
+    }
+
+    if (!oneblogLazyObserver) {
+        oneblogLazyObserver = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('in-view');
+                    oneblogTryLoadNextLazyImage();
+                }
+            });
+        }, {
+            rootMargin: '0px',
+            threshold: 0.1
+        });
+    }
+
+    lazyImages.forEach(el => {
+        el.classList.add('observed');
+        oneblogLazyQueue.push(el);
+        oneblogLazyObserver.observe(el);
     });
 
-    lazyImages.forEach(img => io.observe(img));
+    oneblogTryLoadNextLazyImage();
 }
 
 //加载更多
@@ -372,7 +411,8 @@ jQuery(document).ready(function($) {
                     $next.attr('href', newhref);
                 } else {
                     $next.remove();
-                    document.getElementById("loadmore").innerHTML = "—&nbsp;&nbsp;&nbsp;暂无更多内容&nbsp;&nbsp;&nbsp;—";
+                    var loadmore = document.getElementById("loadmore");
+                    if (loadmore) loadmore.innerHTML = "—&nbsp;&nbsp;&nbsp;暂无更多内容&nbsp;&nbsp;&nbsp;—";
                 }
 
                 initLazyLoad();
@@ -1202,12 +1242,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     codeBlocks.forEach(function(codeBlock) {
         // 创建复制按钮
+        const preElement = codeBlock.parentNode;
+        if (!preElement || preElement.querySelector('.code-copy-btn')) return;
         const copyButton = document.createElement('button');
         copyButton.className = 'code-copy-btn';
         copyButton.textContent = '复制';
         
         // 将按钮添加到代码块的父元素（pre标签）中
-        const preElement = codeBlock.parentNode;
         preElement.style.position = 'relative';
         preElement.appendChild(copyButton);
         

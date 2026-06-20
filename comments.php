@@ -80,11 +80,17 @@
 function getParentAuthor($comments) {
     $parent = $comments->parent;
     if ($parent) {
+        static $cache = [];
+        if (array_key_exists($parent, $cache)) {
+            return $cache[$parent];
+        }
+
         $db = Typecho_Db::get();
         $row = $db->fetchRow($db->select()->from('table.comments')->where('coid = ?', $parent));
         if ($row && isset($row['author'])) {
-            return $row['author'];
+            return $cache[$parent] = $row['author'];
         }
+        return $cache[$parent] = null;
     }
     return null;
 }

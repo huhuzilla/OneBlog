@@ -13,11 +13,17 @@ document.addEventListener('DOMContentLoaded', function () {
     var loadMoreBtn = document.getElementById('load-more-comments');
     var isMobile = window.innerWidth <= 768;
 
+    function finishLoading(showButton) {
+        isLoading = false;
+        if (loadingSpinner) loadingSpinner.style.display = 'none';
+        if (showButton && loadMoreBtn && !noMoreComments) loadMoreBtn.style.display = 'flex';
+    }
+
     function checkNoMore() {
         var hasNext = document.querySelector('.page-navigator .next a');
         if (!hasNext) {
             noMoreComments = true;
-            noMoreElement.style.display = 'flex';
+            if (noMoreElement) noMoreElement.style.display = 'flex';
             if (loadMoreBtn) loadMoreBtn.style.display = 'none';
         }
         return ! hasNext;
@@ -39,24 +45,27 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (xhr.status >= 200 && xhr.status < 400) {
                     var tempDiv = document.createElement('div');
                     tempDiv.innerHTML = xhr.responseText;
-                    commentList.insertAdjacentHTML('beforeend', tempDiv.querySelector('.comment-list').innerHTML);
+                    var newCommentList = tempDiv.querySelector('.comment-list');
+                    if (!newCommentList) {
+                        finishLoading(true);
+                        return;
+                    }
+                    commentList.insertAdjacentHTML('beforeend', newCommentList.innerHTML);
                     // 重新观察视图区域的图片数据
                     if (typeof initLazyLoad === 'function') {
-                        initLazyLoad();
+                        initLazyLoad(commentList);
                     }
-                    var newNav = tempDiv.querySelector('.page-navigator')?. innerHTML;
-                    if (newNav) document.querySelector('.page-navigator').innerHTML = newNav;
+                    var currentNav = document.querySelector('.page-navigator');
+                    var newNav = tempDiv.querySelector('.page-navigator');
+                    if (currentNav && newNav) currentNav.innerHTML = newNav.innerHTML;
                     if (! checkNoMore() && loadMoreBtn) loadMoreBtn.style.display = 'flex';
                 } else if (loadMoreBtn) {
                     loadMoreBtn.style.display = 'flex';
                 }
-                isLoading = false;
-                if (loadingSpinner) loadingSpinner.style.display = 'none';
+                finishLoading(false);
             };
             xhr.onerror = function () {
-                isLoading = false;
-                if (loadingSpinner) loadingSpinner.style.display = 'none';
-                if (loadMoreBtn) loadMoreBtn.style.display = 'flex';
+                finishLoading(true);
             };
             xhr.send();
         }, 500);

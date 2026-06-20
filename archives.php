@@ -42,27 +42,46 @@ $this->need('header.php'); ?>
 <!-- 全部文章（不再排除任何分类） -->
 <section class="archives padding animate__animated animate__fadeIn blur">
     <?php 
-    $this->widget('Widget_Contents_Post_Recent', 'pageSize=10000')->to($archives);
-    $articlesByYear = [];
-    
-    while ($archives->next()) {
-        $year = date('Y', $archives->created);
-        if (!isset($articlesByYear[$year])) {
-            $articlesByYear[$year] = [];
+    $db = Typecho_Db::get();
+    $archiveMeta = $db->fetchRow(
+        $db->select(array('COUNT(cid)' => 'total'), array('MAX(modified)' => 'latest_modified'), array('MAX(created)' => 'latest_created'))
+            ->from('table.contents')
+            ->where('type = ?', 'post')
+            ->where('status = ?', 'publish')
+    );
+    $archiveSign = md5(json_encode(['archives_v1', $archiveMeta]));
+    $archiveHtml = function_exists('oneblogReadCache') ? oneblogReadCache('archives-posts', $archiveSign) : false;
+
+    if ($archiveHtml === false) {
+        ob_start();
+        $this->widget('Widget_Contents_Post_Recent', 'pageSize=10000')->to($archives);
+        $articlesByYear = [];
+        
+        while ($archives->next()) {
+            $year = date('Y', $archives->created);
+            if (!isset($articlesByYear[$year])) {
+                $articlesByYear[$year] = [];
+            }
+            $articlesByYear[$year][] = [
+                'title' => $archives->hidden ? '密码保护：' . $archives->row['title'] : $archives->row['title'],
+                'permalink' => $archives->permalink,
+                'date' => date('m月d日', $archives->created)
+            ];
         }
-        $articlesByYear[$year][] = [
-            'title' => $archives->hidden ? '密码保护：' . $archives->row['title'] : $archives->row['title'],
-            'permalink' => $archives->permalink,
-            'date' => date('m月d日', $archives->created)
-        ];
-    }
-    
-    foreach ($articlesByYear as $year => $articles) {
-        echo '<h3><span>#</span>' . $year . '年</h3>';
-        foreach ($articles as $article) {
-            echo '<li><a href="' . $article['permalink'] . '"><span>' . $article['date'] . '</span>' . $article['title'] . '</a></li>';
+        
+        foreach ($articlesByYear as $year => $articles) {
+            echo '<h3><span>#</span>' . $year . '年</h3>';
+            foreach ($articles as $article) {
+                echo '<li><a href="' . $article['permalink'] . '"><span>' . $article['date'] . '</span>' . $article['title'] . '</a></li>';
+            }
+        }
+
+        $archiveHtml = ob_get_clean();
+        if (function_exists('oneblogWriteCache')) {
+            oneblogWriteCache('archives-posts', $archiveSign, $archiveHtml);
         }
     }
+    echo $archiveHtml;
     ?>
 </section>
 

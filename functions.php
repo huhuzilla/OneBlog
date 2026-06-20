@@ -388,7 +388,9 @@ function oneblogSitemapSign() {
     $contents = $db->fetchRow($db->query(
         'SELECT COUNT(*) AS total, '
         . 'MAX(CASE WHEN modified > 0 THEN modified ELSE created END) AS latest, '
-        . 'GROUP_CONCAT(cid ORDER BY cid) AS cids '
+        . 'SUM(cid) AS cid_sum, '
+        . 'SUM(created) AS created_sum, '
+        . 'SUM(modified) AS modified_sum '
         . 'FROM `' . $prefix . 'contents` '
         . 'WHERE (type = ' . oneblogSitemapQuote('post') . ' OR type = ' . oneblogSitemapQuote('page') . ') '
         . 'AND status = ' . oneblogSitemapQuote('publish') . ' '
@@ -397,7 +399,11 @@ function oneblogSitemapSign() {
 
     $metas = $db->fetchRow($db->query(
         'SELECT COUNT(DISTINCT m.mid) AS total, '
-        . "GROUP_CONCAT(DISTINCT CONCAT(m.mid, ':', m.type, ':', m.slug, ':', COALESCE(m.parent, 0)) ORDER BY m.mid SEPARATOR ',') AS metas "
+        . 'MAX(CASE WHEN c.modified > 0 THEN c.modified ELSE c.created END) AS latest, '
+        . 'SUM(DISTINCT m.mid) AS mid_sum, '
+        . 'SUM(DISTINCT COALESCE(m.parent, 0)) AS parent_sum, '
+        . 'SUM(DISTINCT COALESCE(m.order, 0)) AS order_sum, '
+        . 'SUM(DISTINCT COALESCE(m.count, 0)) AS count_sum '
         . 'FROM `' . $prefix . 'metas` m '
         . 'INNER JOIN `' . $prefix . 'relationships` r ON m.mid = r.mid '
         . 'INNER JOIN `' . $prefix . 'contents` c ON r.cid = c.cid '
@@ -914,33 +920,131 @@ function parseEmojis($content) {
 }
 
 //无插件阅读数，cookie保证阅读量真实性
+// Internal runtime helpers for schema compatibility, counters, and fragment cache.
+function oneblogEnsureColumn($table, $column, $definition) {
+    static $cache = [];
+
+    if (!preg_match('/^[a-z0-9_]+$/i', $table) || !preg_match('/^[a-z0-9_]+$/i', $column)) {
+        return false;
+    }
+
+    $key = $table . '.' . $column;
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+
+    $db = Typecho_Db::get();
+    try {
+        $db->fetchRow($db->select($column)->from('table.' . $table)->limit(1));
+        return $cache[$key] = true;
+    } catch (Throwable $e) {
+    } catch (Exception $e) {
+    }
+
+    try {
+        $db->query('ALTER TABLE `' . $db->getPrefix() . $table . '` ADD `' . $column . '` ' . $definition);
+        return $cache[$key] = true;
+    } catch (Throwable $e) {
+        error_log('OneBlog ensure column failed: ' . $table . '.' . $column . ' ' . $e->getMessage());
+    } catch (Exception $e) {
+        error_log('OneBlog ensure column failed: ' . $table . '.' . $column . ' ' . $e->getMessage());
+    }
+
+    return $cache[$key] = false;
+}
+
+function oneblogIncrementColumn($table, $column, $whereColumn, $whereValue) {
+    if (
+        !preg_match('/^[a-z0-9_]+$/i', $table) ||
+        !preg_match('/^[a-z0-9_]+$/i', $column) ||
+        !preg_match('/^[a-z0-9_]+$/i', $whereColumn)
+    ) {
+        return false;
+    }
+
+    $db = Typecho_Db::get();
+    $whereValue = (int) $whereValue;
+
+    try {
+        $query = $db->update('table.' . $table);
+        if (method_exists($query, 'expression')) {
+            $result = $db->query(
+                $query->expression($column, $column . ' + 1')
+                    ->where($whereColumn . ' = ?', $whereValue)
+            );
+            return $result !== false;
+        }
+    } catch (Throwable $e) {
+    } catch (Exception $e) {
+    }
+
+    try {
+        $sql = 'UPDATE `' . $db->getPrefix() . $table . '` SET `' . $column . '` = `' . $column . '` + 1 WHERE `' . $whereColumn . '` = ' . $whereValue;
+        return $db->query($sql) !== false;
+    } catch (Throwable $e) {
+        error_log('OneBlog increment failed: ' . $table . '.' . $column . ' ' . $e->getMessage());
+    } catch (Exception $e) {
+        error_log('OneBlog increment failed: ' . $table . '.' . $column . ' ' . $e->getMessage());
+    }
+
+    return false;
+}
+
+function oneblogCachePath($name) {
+    if (!preg_match('/^[a-z0-9_-]+$/i', $name)) {
+        return '';
+    }
+
+    $uploadDir = Helper::options()->uploadDir ?: 'usr/uploads';
+    $uploadDir = rtrim($uploadDir, '/\\');
+    $dir = __TYPECHO_ROOT_DIR__ . '/' . $uploadDir . '/oneblog-cache';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+
+    return is_dir($dir) && is_writable($dir) ? $dir . '/' . $name . '.cache' : '';
+}
+
+function oneblogReadCache($name, $sign) {
+    $path = oneblogCachePath($name);
+    if ($path === '' || !is_file($path)) {
+        return false;
+    }
+
+    $data = json_decode((string) @file_get_contents($path), true);
+    if (!is_array($data) || ($data['sign'] ?? '') !== $sign || !isset($data['html'])) {
+        return false;
+    }
+
+    return (string) $data['html'];
+}
+
+function oneblogWriteCache($name, $sign, $html) {
+    $path = oneblogCachePath($name);
+    if ($path === '') {
+        return false;
+    }
+
+    $json = json_encode([
+        'sign' => $sign,
+        'html' => (string) $html,
+        'time' => time()
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    return $json !== false && @file_put_contents($path, $json, LOCK_EX) !== false;
+}
+
 function get_post_view($archive) {
     $cid = $archive->cid;
     $db = Typecho_Db::get();
-    $prefix = $db->getPrefix();
-
-    static $hasViewsField = null;
-    if ($hasViewsField === null) {
-        try {
-            $db->fetchRow($db->select('views')->from('table.contents')->limit(1));
-            $hasViewsField = true;
-        } catch (Typecho_Db_Exception $e) {
-            $hasViewsField = false;
-        }
-    }
-
-    if (!$hasViewsField) {
-        try {
-            $db->query('ALTER TABLE ' . $prefix . 'contents ADD views INT DEFAULT 0;');
-            $hasViewsField = true;
-        } catch (Typecho_Db_Exception $e) {
-            echo 0;
-            return;
-        }
+    if (!oneblogEnsureColumn('contents', 'views', 'INT(10) NOT NULL DEFAULT 0')) {
+        echo 0;
+        return;
     }
 
     // 获取当前阅读数
     static $viewCache = [];
+    static $countedThisRequest = [];
     if (isset($viewCache[$cid])) {
         $currentViews = $viewCache[$cid];
     } else {
@@ -955,19 +1059,19 @@ function get_post_view($archive) {
         $cookieData = Typecho_Cookie::get('extend_contents_views');
         $views = $cookieData ? explode(',', $cookieData) : [];
         
-        if (!in_array($cid, $views)) {
-            $shouldCount = true;
-            $db->query($db->update('table.contents')
-                ->rows(['views' => $currentViews + 1])
-                ->where('cid = ?', $cid));
-            
+        if (!in_array((string) $cid, array_map('strval', $views), true) && empty($countedThisRequest[$cid])) {
+            $shouldCount = oneblogIncrementColumn('contents', 'views', 'cid', $cid);
             $views[] = $cid;
             Typecho_Cookie::set('extend_contents_views', implode(',', $views));
-            $viewCache[$cid] = $currentViews + 1;
+            $countedThisRequest[$cid] = true;
+            if ($shouldCount) {
+                $row = $db->fetchRow($db->select('views')->from('table.contents')->where('cid = ?', $cid));
+                $currentViews = (int) ($row['views'] ?? ($currentViews + 1));
+                $viewCache[$cid] = $currentViews;
+            }
         }
     }
-    $displayViews = $currentViews + ($shouldCount ? 1 : 0);
-    echo formatNum($displayViews);
+    echo formatNum($currentViews);
 }
 
 //格式化阅读数：≥1000 单位转化为k；≥10000 单位转化为W；最多显示10W+
@@ -1029,21 +1133,41 @@ function timer_stop($display = 0, $precision = 3){
 }
 
 //文章字数统计
-function art_count ($cid){
+function art_count ($cid, $text = null){
+    static $cache = [];
+
+    if ($text !== null) {
+        echo mb_strlen((string) $text, 'UTF-8');
+        return;
+    }
+
+    $cid = (int) $cid;
+    if (array_key_exists($cid, $cache)) {
+        echo $cache[$cid];
+        return;
+    }
+
     $db=Typecho_Db::get ();
     $rs=$db->fetchRow ($db->select ('table.contents.text')->from ('table.contents')->where ('table.contents.cid=?',$cid)->order ('table.contents.cid',Typecho_Db::SORT_ASC)->limit (1));
-    echo mb_strlen($rs['text'], 'UTF-8');
+    $cache[$cid] = mb_strlen((string) ($rs['text'] ?? ''), 'UTF-8');
+    echo $cache[$cid];
 }
 
 //评论者等级
 function dengji($i) {
     $db = Typecho_Db::get();
     $adminAuthorId = 1;
+    static $adminMail = null;
+    static $authorIdCache = [];
+    static $countCache = [];
 
     // 如果邮箱为空，使用站长邮箱
     if (empty($i)) {
-        $admin = $db->fetchRow($db->select('mail')->from('table.users')->where('uid = ?', $adminAuthorId));
-        $i = $admin ? $admin['mail'] : null;
+        if ($adminMail === null) {
+            $admin = $db->fetchRow($db->select('mail')->from('table.users')->where('uid = ?', $adminAuthorId));
+            $adminMail = $admin ? $admin['mail'] : '';
+        }
+        $i = $adminMail ?: null;
     }
 
     // 检查邮箱是否获取成功
@@ -1052,15 +1176,23 @@ function dengji($i) {
         return;
     }
 
-    $author = $db->fetchRow($db->select('authorId')->from('table.comments')->where('mail = ?', $i)->limit(1));
-    $authorId = $author ? $author['authorId'] : null;
+    if (!array_key_exists($i, $authorIdCache)) {
+        $author = $db->fetchRow($db->select('authorId')->from('table.comments')->where('mail = ?', $i)->limit(1));
+        $authorIdCache[$i] = $author ? $author['authorId'] : null;
+    }
+    $authorId = $authorIdCache[$i];
 
     if ($authorId == $adminAuthorId) {
         echo '<span class="level owner">博主</span>';
         return;
     }
 
-    $mail = $db->fetchRow($db->select(array('COUNT(cid)' => 'rbq'))->from('table.comments')->where('mail = ?', $i)->where('authorId = ?', '0'));
+    if (!array_key_exists($i, $countCache)) {
+        $mail = $db->fetchRow($db->select(array('COUNT(cid)' => 'rbq'))->from('table.comments')->where('mail = ?', $i)->where('authorId = ?', '0'));
+        $countCache[$i] = $mail ? (int) $mail['rbq'] : 0;
+    } else {
+        $mail = ['rbq' => $countCache[$i]];
+    }
     $rbq = $mail ? $mail['rbq'] : 0; // 如果没有评论就是0
 
     if ($rbq < 3) {
@@ -1166,12 +1298,10 @@ function commentLikesNum($coid, &$record = NULL){
         'likes' => 0,
         'recording' => false
     );
-    $data = $db->fetchRow($db->select()->from('table.comments')->where('coid = ?', $coid));
-    if (is_array($data)) {
-        if (array_key_exists('likes', $data)) {
-            $callback['likes'] = $data['likes'];
-        } else {
-            $db->query('ALTER TABLE `' . $db->getPrefix() . 'comments` ADD `likes` INT(10) NOT NULL DEFAULT 0;');
+    if (oneblogEnsureColumn('comments', 'likes', 'INT(10) NOT NULL DEFAULT 0')) {
+        $data = $db->fetchRow($db->select('likes')->from('table.comments')->where('coid = ?', $coid));
+        if (is_array($data)) {
+            $callback['likes'] = (int) ($data['likes'] ?? 0);
         }
     }
     if (empty($recording = Typecho_Cookie::get('__typecho_comment_likes_record'))) {
@@ -1215,9 +1345,12 @@ function commentLikes($archive){
         }
 
         $db = Typecho_Db::get();
-        $prefix = $db->getPrefix();
-        if (!array_key_exists('likes', $db->fetchRow($db->select()->from('table.comments')))) {
-        $db->query('ALTER TABLE `' . $prefix . 'comments` ADD `likes` INT(30) DEFAULT 0;');
+        if (!oneblogEnsureColumn('comments', 'likes', 'INT(10) NOT NULL DEFAULT 0')) {
+            $archive->response->throwJson(array(
+                "state" => "error",
+                "message" => "Like column unavailable",
+                "num" => 0
+            ));
         }
         $row = $db->fetchRow($db->select('likes')->from('table.comments')->where('coid = ?', $coid));
         if (!$row) {
@@ -1227,9 +1360,10 @@ function commentLikes($archive){
                 "num" => 0
             ));
         }
-        $updateRows = $db->query($db->update('table.comments')->rows(array('likes' => (int) $row['likes'] + 1))->where('coid = ?', $coid));
+        $updateRows = oneblogIncrementColumn('comments', 'likes', 'coid', $coid);
         if($updateRows){
-            $num = $row['likes'] + 1;
+            $row = $db->fetchRow($db->select('likes')->from('table.comments')->where('coid = ?', $coid));
+            $num = (int) ($row['likes'] ?? ($res1['likes'] + 1));
             $state =  "success";
             $record[] = $coid;
             Typecho_Cookie::set('__typecho_comment_likes_record', json_encode(array_values(array_unique($record))));
@@ -1316,8 +1450,13 @@ function MemosList($comments, $user) { ?>
  */
 function isMemosImageEnabled()
 {
+    static $enabled = null;
+    if ($enabled !== null) {
+        return $enabled;
+    }
+
     $export = Typecho_Plugin::export();
-    return isset($export['activated']['MemosImage']);
+    return $enabled = isset($export['activated']['MemosImage']);
 }
 
 /**
@@ -1325,16 +1464,27 @@ function isMemosImageEnabled()
  */
 function getMemosImages($coid)
 {
+    static $tableExists = null;
+    static $imagesCache = [];
+
     if (!isMemosImageEnabled()) {
         return [];
+    }
+
+    $coid = (int) $coid;
+    if (array_key_exists($coid, $imagesCache)) {
+        return $imagesCache[$coid];
     }
 
     $db = Typecho_Db::get();
     $table = $db->getPrefix() . 'memos_img';
 
-    $exists = $db->fetchRow($db->query("SHOW TABLES LIKE '{$table}'"));
-    if (!$exists) {
-        return [];
+    if ($tableExists === null) {
+        $exists = $db->fetchRow($db->query("SHOW TABLES LIKE '{$table}'"));
+        $tableExists = (bool) $exists;
+    }
+    if (!$tableExists) {
+        return $imagesCache[$coid] = [];
     }
 
     $row = $db->fetchRow(
@@ -1342,11 +1492,11 @@ function getMemosImages($coid)
     );
 
     if (!$row || empty($row['imgs'])) {
-        return [];
+        return $imagesCache[$coid] = [];
     }
 
     $imgs = json_decode($row['imgs'], true);
-    return is_array($imgs) ? array_slice($imgs, 0, 9) : [];
+    return $imagesCache[$coid] = (is_array($imgs) ? array_slice($imgs, 0, 9) : []);
 }
 
 /**
@@ -1354,11 +1504,14 @@ function getMemosImages($coid)
  */
 function getMemosThumbUrl($url)
 {
-    $append = '';
-    try {
-        $plugin = Helper::options()->plugin('MemosImage');
-        $append = (string)($plugin->cosThumbAppend ?? '');
-    } catch (Throwable $e) {}
+    static $append = null;
+    if ($append === null) {
+        $append = '';
+        try {
+            $plugin = Helper::options()->plugin('MemosImage');
+            $append = (string)($plugin->cosThumbAppend ?? '');
+        } catch (Throwable $e) {}
+    }
 
     $isLocalUpload = (strpos($url, '/usr/uploads/') !== false);
 
