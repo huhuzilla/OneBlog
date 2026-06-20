@@ -41,7 +41,6 @@ const _0x5a1b=['T25lQmxvZw==','aHR0cHM6Ly9kb2NzLm9uZW5vdGUuaW8=','Y29weXJpZ2h0LX
 
 /*自定义菜单效果*/
 const $menu = $(".menu");
-const $openBtn = $(".icon-nav");
 const $body = $("body");
 const $header = $(".header");
 const $commonElements = $(".blur");
@@ -1096,8 +1095,15 @@ function initLinkStatus() {
     function setDots(url, status) {
         (linkMap.get(url) || []).forEach(function(dot) {
             dot.classList.remove('is-checking', 'is-ok', 'is-error', 'is-warning');
+            dot.style.removeProperty('background-color');
             dot.classList.add(status);
         });
+    }
+
+    function statusToClass(status) {
+        if (status === 'ok') return 'is-ok';
+        if (status === 'error') return 'is-error';
+        return 'is-checking';
     }
 
     links.forEach(function(link) {
@@ -1138,7 +1144,7 @@ function initLinkStatus() {
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const timeoutId = controller ? setTimeout(function() {
         controller.abort();
-    }, 10000) : null;
+    }, 30000) : null;
 
     fetch(endpoint, {
         method: 'POST',
@@ -1152,24 +1158,32 @@ function initLinkStatus() {
     })
         .then(function(res) { return res.json(); })
         .then(function(res) {
-            if (!res || !res.success || !res.items) return;
-            Object.keys(res.items).forEach(function(url) {
-                const status = res.items[url] === 'ok' ? 'ok' : 'warning';
-                setDots(url, status === 'ok' ? 'is-ok' : 'is-warning');
+            const items = res && res.items ? res.items : res;
+            if (!items || typeof items !== 'object') return;
+
+            Object.keys(items).forEach(function(url) {
+                setDots(normalizeLinkUrl(url), statusToClass(items[url]));
             });
         })
         .catch(function() {
-            document.querySelectorAll('.link-status-dot.is-checking').forEach(function(dot) {
-                dot.classList.remove('is-checking');
-                dot.classList.add('is-warning');
-            });
+            // 状态接口失败时保持灰色未知态，不影响页面使用。
         })
         .finally(function() {
             if (timeoutId) clearTimeout(timeoutId);
         });
 }
 
-document.addEventListener('DOMContentLoaded', initLinkStatus);
+window.addEventListener('load', function() {
+    const run = function() {
+        initLinkStatus();
+    };
+
+    if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(run, { timeout: 3000 });
+    } else {
+        setTimeout(run, 800);
+    }
+});
 
 /**开源不易，请尊重作者的版权，保留本信息**/
 function showConsoleInfo() {

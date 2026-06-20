@@ -1,4 +1,7 @@
 <?php
+/**
+ * 友链在线状态检测
+ */
 header('Content-Type: application/json; charset=UTF-8');
 
 const ONEBLOG_LINK_STATUS_TTL = 86400;
@@ -7,6 +10,81 @@ const ONEBLOG_LINK_STATUS_CACHE_VERSION = 2;
 function oneblog_json($data) {
     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
+}
+
+function oneblog_finish_json($data) {
+    $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if ($json === false) $json = '{"success":false,"message":"JSON encode failed"}';
+
+    header('Content-Length: ' . strlen($json));
+    echo $json;
+
+    fastcgi_finish_request();
+}
+
+function oneblog_refresh_token_path() {
+    return oneblog_cache_path() . '.refresh.token';
+}
+
+function oneblog_create_refresh_token() {
+    if (function_exists('random_bytes')) {
+        $bytes = random_bytes(16);
+    } elseif (function_exists('openssl_random_pseudo_bytes')) {
+        $bytes = openssl_random_pseudo_bytes(16);
+    } else {
+        $bytes = md5(uniqid('', true), true);
+    }
+
+    $token = bin2hex($bytes);
+    @file_put_contents(oneblog_refresh_token_path(), time() . ':' . $token, LOCK_EX);
+    return $token;
+}
+
+function oneblog_verify_refresh_token($token) {
+    $raw = (string) @file_get_contents(oneblog_refresh_token_path());
+    if ($raw === '') return false;
+
+    [$time, $stored] = array_pad(explode(':', $raw, 2), 2, '');
+    if ((time() - (int) $time) > 300) return false;
+
+    return is_string($token) && $stored !== '' && hash_equals($stored, $token);
+}
+
+function oneblog_dispatch_refresh($urls) {
+    if (!function_exists('fsockopen')) return false;
+
+    $host = $_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_NAME'] ?? '');
+    $serverName = $_SERVER['SERVER_NAME'] ?? preg_replace('/:\d+$/', '', $host);
+    $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+    if ($host === '' || $serverName === '' || !$path) return false;
+    if (!preg_match('/^[A-Za-z0-9.-]+(?::\d+)?$/', $host)) return false;
+    if (!preg_match('/^[A-Za-z0-9.-]+$/', $serverName)) return false;
+
+    $isHttps = !empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off';
+    $port = (int) ($_SERVER['SERVER_PORT'] ?? ($isHttps ? 443 : 80));
+    $transport = $isHttps ? 'ssl://' : '';
+    $body = http_build_query([
+        'refresh' => '1',
+        'token' => oneblog_create_refresh_token(),
+        'urls' => array_values($urls),
+    ]);
+
+    $fp = @fsockopen($transport . $serverName, $port, $errno, $errstr, 0.2);
+    if (!$fp) return false;
+
+    @stream_set_timeout($fp, 0, 200000);
+    @fwrite(
+        $fp,
+        "POST " . $path . " HTTP/1.1\r\n"
+        . "Host: " . $host . "\r\n"
+        . "Content-Type: application/x-www-form-urlencoded; charset=UTF-8\r\n"
+        . "Content-Length: " . strlen($body) . "\r\n"
+        . "Connection: Close\r\n\r\n"
+        . $body
+    );
+    @fclose($fp);
+
+    return true;
 }
 
 function oneblog_cache_path() {
@@ -166,7 +244,6 @@ function oneblog_read_urls() {
     if (!is_array($urls)) $urls = [$urls];
 
     $urls = array_values(array_unique(array_filter(array_map('oneblog_normalize_url', $urls))));
-    $urls = array_values(array_filter($urls, 'oneblog_is_public_url'));
     return array_slice($urls, 0, 30);
 }
 
@@ -214,6 +291,10 @@ function oneblog_curl_options($url, $isHead) {
 }
 
 function oneblog_check_once($url, $isHead) {
+    if (!function_exists('curl_init')) {
+        return ['code' => 0];
+    }
+
     $ch = curl_init();
     curl_setopt_array($ch, oneblog_curl_options($url, $isHead));
     curl_exec($ch);
@@ -228,6 +309,14 @@ function oneblog_check_once($url, $isHead) {
 
 function oneblog_check_multi($urls, $isHead) {
     if (!$urls) return [];
+    if (!function_exists('curl_init')) {
+        $results = [];
+        foreach ($urls as $url) {
+            $results[$url] = ['code' => 0];
+        }
+        return $results;
+    }
+
     if (!function_exists('curl_multi_init')) {
         $results = [];
         foreach ($urls as $url) {
@@ -308,38 +397,15 @@ function oneblog_build_result($url, $checks) {
     ];
 }
 
-$urls = oneblog_read_urls();
-if (!$urls) {
-    oneblog_json(['success' => false, 'message' => 'No url provided']);
-}
+function oneblog_check_urls($urls) {
+    $urls = array_values(array_unique($urls));
+    if (!$urls) return [];
 
-$cache = oneblog_load_cache();
-$items = [];
-$needCheck = [];
-$now = time();
-$cache = oneblog_prune_cache($cache, $now);
-
-foreach ($urls as $url) {
-    $key = md5($url);
-    $cached = $cache[$key] ?? null;
-
-    if (
-        is_array($cached)
-        && (int) ($cached['version'] ?? 0) === ONEBLOG_LINK_STATUS_CACHE_VERSION
-        && ($now - (int) ($cached['checked_at'] ?? 0)) < ONEBLOG_LINK_STATUS_TTL
-    ) {
-        $items[$url] = $cached['status'];
-    } else {
-        $needCheck[] = $url;
-    }
-}
-
-if ($needCheck) {
-    $headResults = oneblog_check_multi($needCheck, true);
+    $headResults = oneblog_check_multi($urls, true);
     $checksByUrl = [];
     $needGet = [];
 
-    foreach ($needCheck as $url) {
+    foreach ($urls as $url) {
         $head = $headResults[$url] ?? ['code' => 0];
         $checksByUrl[$url] = [$head];
         if ($head['code'] === 0 || $head['code'] === 405) {
@@ -354,20 +420,143 @@ if ($needCheck) {
         }
     }
 
-    foreach ($needCheck as $url) {
-        $result = oneblog_build_result($url, $checksByUrl[$url] ?? []);
-        $cache[md5($url)] = $result;
-        $items[$url] = $result['status'];
+    $results = [];
+    foreach ($urls as $url) {
+        $results[$url] = oneblog_build_result($url, $checksByUrl[$url] ?? []);
     }
+
+    return $results;
 }
 
-foreach ($cache as &$cached) {
-    if (is_array($cached)) {
-        unset($cached['time']);
+function oneblog_refresh_cache($urls) {
+    $urls = array_values(array_unique($urls));
+    if (!$urls) return;
+
+    ignore_user_abort(true);
+    @set_time_limit(80);
+
+    $lockPath = oneblog_cache_path() . '.refresh.lock';
+    $lock = @fopen($lockPath, 'c');
+    if (!$lock) return;
+
+    if (!@flock($lock, LOCK_EX | LOCK_NB)) {
+        @fclose($lock);
+        return;
     }
+
+    $now = time();
+    $cache = oneblog_prune_cache(oneblog_load_cache(), $now);
+    $needCheck = [];
+    $changed = false;
+
+    foreach ($urls as $url) {
+        $key = md5($url);
+        $cached = $cache[$key] ?? null;
+        if (
+            is_array($cached)
+            && (int) ($cached['version'] ?? 0) === ONEBLOG_LINK_STATUS_CACHE_VERSION
+            && ($now - (int) ($cached['checked_at'] ?? 0)) < ONEBLOG_LINK_STATUS_TTL
+        ) {
+            continue;
+        }
+
+        if (!oneblog_is_public_url($url)) {
+            $cache[$key] = [
+                'status' => 'error',
+                'checked_at' => time(),
+                'version' => ONEBLOG_LINK_STATUS_CACHE_VERSION,
+                'url' => $url,
+            ];
+            $changed = true;
+            continue;
+        }
+
+        $needCheck[] = $url;
+    }
+
+    foreach (oneblog_check_urls($needCheck) as $url => $result) {
+        $key = md5($url);
+        $cache[$key] = $result;
+        $changed = true;
+    }
+
+    if ($changed) {
+        foreach ($cache as &$cached) {
+            if (is_array($cached)) {
+                unset($cached['time']);
+            }
+        }
+        unset($cached);
+
+        oneblog_save_cache($cache);
+    }
+
+    @flock($lock, LOCK_UN);
+    @fclose($lock);
 }
-unset($cached);
 
-oneblog_save_cache($cache);
+$urls = oneblog_read_urls();
+if (!$urls) {
+    oneblog_json(['success' => false, 'message' => 'No url provided']);
+}
 
-oneblog_json(['success' => true, 'items' => $items]);
+if (!empty($_REQUEST['refresh'])) {
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+        oneblog_json(['success' => false, 'message' => 'Invalid refresh method']);
+    }
+
+    if (!oneblog_verify_refresh_token($_REQUEST['token'] ?? '')) {
+        oneblog_json(['success' => false, 'message' => 'Invalid refresh token']);
+    }
+
+    oneblog_refresh_cache($urls);
+    oneblog_json(['success' => true, 'refreshed' => true]);
+}
+
+$cache = oneblog_load_cache();
+$items = [];
+$needRefresh = [];
+$now = time();
+$cache = oneblog_prune_cache($cache, $now);
+
+foreach ($urls as $url) {
+    $key = md5($url);
+    $cached = $cache[$key] ?? null;
+
+    if (
+        is_array($cached)
+        && (int) ($cached['version'] ?? 0) === ONEBLOG_LINK_STATUS_CACHE_VERSION
+        && ($now - (int) ($cached['checked_at'] ?? 0)) < ONEBLOG_LINK_STATUS_TTL
+    ) {
+        $status = $cached['status'] ?? '';
+        $items[$url] = in_array($status, ['ok', 'error'], true) ? $status : 'checking';
+        continue;
+    }
+
+    if (
+        is_array($cached)
+        && (int) ($cached['version'] ?? 0) === ONEBLOG_LINK_STATUS_CACHE_VERSION
+        && ($cached['status'] ?? '') === 'ok'
+    ) {
+        $items[$url] = 'ok';
+    } else {
+        $items[$url] = 'checking';
+    }
+
+    $needRefresh[] = $url;
+}
+
+if (!$needRefresh) {
+    oneblog_json(['success' => true, 'items' => $items, 'refreshing' => false]);
+}
+
+if (!function_exists('fastcgi_finish_request')) {
+    oneblog_json([
+        'success' => true,
+        'items' => $items,
+        'refreshing' => oneblog_dispatch_refresh($needRefresh)
+    ]);
+}
+
+oneblog_finish_json(['success' => true, 'items' => $items, 'refreshing' => true]);
+oneblog_refresh_cache($needRefresh);
