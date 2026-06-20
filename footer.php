@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function () {
 <script src="https://static.geetest.com/v4/gt4.js"></script>
 <?php endif;?>
 <!--评论无限加载js-->
-<script src="<?php $this->options->themeUrl('/static/js/comments.js?v=3.7.0'); ?>"></script>
+<script src="<?php $this->options->themeUrl('/static/js/comments.js?v=3.7.1'); ?>"></script>
 <?php endif;?>
 
 <script src="<?php $this->options->themeUrl('/static/js/main.js?v=3.7.1'); ?>"></script><!--主题js-->

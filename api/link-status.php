@@ -3,9 +3,11 @@
  * 友链在线状态检测
  */
 header('Content-Type: application/json; charset=UTF-8');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
 
 const ONEBLOG_LINK_STATUS_TTL = 86400;
-const ONEBLOG_LINK_STATUS_CACHE_VERSION = 2;
+const ONEBLOG_LINK_STATUS_CACHE_VERSION = 1;
 
 function oneblog_json($data) {
     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
@@ -93,9 +95,7 @@ function oneblog_cache_path() {
         @mkdir($uploadDir, 0755, true);
     }
 
-    return is_writable($uploadDir)
-        ? $uploadDir . '/oneblog-link-status.json'
-        : __DIR__ . '/oneblog-link-status.json';
+    return $uploadDir . '/oneblog-link-status.json';
 }
 
 function oneblog_load_cache() {
@@ -104,6 +104,10 @@ function oneblog_load_cache() {
 
     $data = json_decode((string) @file_get_contents($path), true);
     return is_array($data) ? $data : [];
+}
+
+function oneblog_cache_exists() {
+    return is_file(oneblog_cache_path());
 }
 
 function oneblog_save_cache($cache) {
@@ -462,7 +466,7 @@ function oneblog_refresh_cache($urls) {
 
         if (!oneblog_is_public_url($url)) {
             $cache[$key] = [
-                'status' => 'error',
+                'status' => 'checking',
                 'checked_at' => time(),
                 'version' => ONEBLOG_LINK_STATUS_CACHE_VERSION,
                 'url' => $url,
@@ -513,6 +517,31 @@ if (!empty($_REQUEST['refresh'])) {
     oneblog_json(['success' => true, 'refreshed' => true]);
 }
 
+if (!oneblog_cache_exists()) {
+    $items = [];
+    foreach ($urls as $url) {
+        $items[$url] = 'checking';
+    }
+
+    if (!function_exists('fastcgi_finish_request')) {
+        oneblog_json([
+            'success' => true,
+            'cache_exists' => false,
+            'items' => $items,
+            'refreshing' => oneblog_dispatch_refresh($urls)
+        ]);
+    }
+
+    oneblog_finish_json([
+        'success' => true,
+        'cache_exists' => false,
+        'items' => $items,
+        'refreshing' => true
+    ]);
+    oneblog_refresh_cache($urls);
+    exit;
+}
+
 $cache = oneblog_load_cache();
 $items = [];
 $needRefresh = [];
@@ -547,16 +576,27 @@ foreach ($urls as $url) {
 }
 
 if (!$needRefresh) {
-    oneblog_json(['success' => true, 'items' => $items, 'refreshing' => false]);
+    oneblog_json([
+        'success' => true,
+        'cache_exists' => true,
+        'items' => $items,
+        'refreshing' => false
+    ]);
 }
 
 if (!function_exists('fastcgi_finish_request')) {
     oneblog_json([
         'success' => true,
+        'cache_exists' => true,
         'items' => $items,
         'refreshing' => oneblog_dispatch_refresh($needRefresh)
     ]);
 }
 
-oneblog_finish_json(['success' => true, 'items' => $items, 'refreshing' => true]);
+oneblog_finish_json([
+    'success' => true,
+    'cache_exists' => true,
+    'items' => $items,
+    'refreshing' => true
+]);
 oneblog_refresh_cache($needRefresh);

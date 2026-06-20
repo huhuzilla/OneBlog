@@ -1120,6 +1120,8 @@ document.addEventListener('DOMContentLoaded', initProtectEye);
 function initLinkStatus() {
     const links = Array.from(document.querySelectorAll('.links .link a[href]'));
     if (!links.length) return;
+    if (window.oneblogLinkStatusStarted) return;
+    window.oneblogLinkStatusStarted = true;
 
     function normalizeLinkUrl(url) {
         url = (url || '').trim();
@@ -1134,15 +1136,14 @@ function initLinkStatus() {
 
     function setDots(url, status) {
         (linkMap.get(url) || []).forEach(function(dot) {
-            dot.classList.remove('is-checking', 'is-ok', 'is-error', 'is-warning');
-            dot.style.removeProperty('background-color');
+            dot.classList.remove('is-checking', 'is-ok', 'is-error');
             dot.classList.add(status);
         });
     }
 
-    function statusToClass(status) {
+    function statusToClass(status, cacheExists) {
         if (status === 'ok') return 'is-ok';
-        if (status === 'error') return 'is-error';
+        if (status === 'error' && cacheExists === true) return 'is-error';
         return 'is-checking';
     }
 
@@ -1161,9 +1162,10 @@ function initLinkStatus() {
         let dot = avatar.querySelector('.link-status-dot');
         if (!dot) {
             dot = document.createElement('span');
-            dot.className = 'link-status-dot is-checking';
             avatar.appendChild(dot);
         }
+        dot.classList.remove('is-ok', 'is-error');
+        dot.classList.add('link-status-dot', 'is-checking');
 
         const url = normalizeLinkUrl(link.getAttribute('href'));
         if (!url) return;
@@ -1198,11 +1200,12 @@ function initLinkStatus() {
     })
         .then(function(res) { return res.json(); })
         .then(function(res) {
-            const items = res && res.items ? res.items : res;
+            const items = res && res.success === true && res.items ? res.items : null;
             if (!items || typeof items !== 'object') return;
 
+            const cacheExists = !!(res && res.cache_exists === true);
             Object.keys(items).forEach(function(url) {
-                setDots(normalizeLinkUrl(url), statusToClass(items[url]));
+                setDots(normalizeLinkUrl(url), statusToClass(items[url], cacheExists));
             });
         })
         .catch(function() {
@@ -1227,7 +1230,7 @@ window.addEventListener('load', function() {
 
 /**开源不易，请尊重作者的版权，保留本信息**/
 function showConsoleInfo() {
-    const version = '3.7.0';
+    const version = '3.7.1';
     const copyright = '自豪地使用OneBlog主题';
     console.log('\n' + ' %c 当前版本：' + version + '  ' + copyright + '  %c https://onenote.io  ' + '\n', 'color: #fadfa3; background: #030307; padding:5px 0;', 'background: #fadfa3; padding:5px 0;');
     console.log('开源不易，请尊重作者版权，保留基本的版权信息。');

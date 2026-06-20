@@ -8,7 +8,7 @@ OneBlog，一个博客，再无其他。本主题基于Typecho，设计初衷是
 
 **官网**：[onenote.io](https://onenote.io/)
 
-**最新版本：V3.7.0**
+**最新版本：V3.7.1**
 
 ### 主题特性
 
@@ -37,11 +37,9 @@ OneBlog，一个博客，再无其他。本主题基于Typecho，设计初衷是
 
 主题文档：[docs.onenote.io](https://docs.onenote.io)
 
-全网首发：[onenote.io/oneblog](https://onenote.io/oneblog)
+合作论坛：[litebbs.com](https://litebbs.com)
 
-主题方面的问题请优先在issues中反馈，<u>请勿在博客文章留言区反馈</u>。
-
-关于主题的讨论，请统一在[主题发布页](https://onenote.io/oneblog)发表。
+首发地址：[onenote.io/oneblog](https://onenote.io/oneblog)
 
 ### 版权声明
 
@@ -70,6 +68,13 @@ OneBlog，一个博客，再无其他。本主题基于Typecho，设计初衷是
 ### 版本更新记录
 
 ```
+v3.7.1 版本更新
+1.全面优化后端与前端性能；
+2.优化使用CDN后特殊情况下微语点赞报错的问题；
+3.优化sitemap的聚合逻辑，避免海量数据下的截断风险；
+4.优化友链检测逻辑；
+5.修复已知的安全漏洞。
+
 v3.7.0 版本更新
 1.修复typecho1.3.0版本下的文章编辑页的自定义字段错位问题；
 2.支持自动在夜晚时间段开启夜间模式；
