@@ -521,28 +521,42 @@ function themeConfig($form) {
         $uploadDir = Helper::options()->uploadDir ?: 'usr/uploads';
         $uploadDir = rtrim($uploadDir, '/\\');
         $absUploadDir = __TYPECHO_ROOT_DIR__ . '/' . $uploadDir;
-        if (!is_dir($absUploadDir)) {
-            @mkdir($absUploadDir, 0755, true);
-        }
+        $uploadDirReady = is_dir($absUploadDir) || @mkdir($absUploadDir, 0755, true);
         $backPath = $absUploadDir . '/BackupSetting_' . $theTheme . '.txt';
+        clearstatcache(true, $absUploadDir);
+        clearstatcache(true, $backPath);
         $ret = ['success'=>false, 'message'=>'未知错误'];
         $action = isset($_POST['action']) ? $_POST['action'] : '';
         if ($action === 'oneblog_theme_backup') {
-            $themeConfStr = $db->fetchRow($db->select()->from('table.options')->where('name = ?', 'theme:' . $theTheme))['value'];
-            $ok = file_put_contents($backPath, $themeConfStr);
-            $ret = $ok !== false
-                ? ['success'=>true, 'message'=>'备份成功']
-                : ['success'=>false, 'message'=>'备份失败，uploads 目录不可写'];
+            if (!$uploadDirReady) {
+                $ret = ['success'=>false, 'message'=>'备份失败，uploads 目录不存在且无法自动创建'];
+            } elseif (!file_exists($backPath) && !is_writable($absUploadDir)) {
+                $ret = ['success'=>false, 'message'=>'备份失败，uploads 目录不可写'];
+            } elseif (file_exists($backPath) && !is_writable($backPath)) {
+                $ret = ['success'=>false, 'message'=>'备份失败，备份文件不可写，请检查 BackupSetting_OneBlog.txt 权限'];
+            } else {
+                $themeConfStr = $db->fetchRow($db->select()->from('table.options')->where('name = ?', 'theme:' . $theTheme))['value'];
+                $ok = @file_put_contents($backPath, $themeConfStr, LOCK_EX);
+                $ret = $ok !== false
+                    ? ['success'=>true, 'message'=>'备份成功']
+                    : ['success'=>false, 'message'=>'备份失败，请检查 uploads 目录、备份文件权限或磁盘空间'];
+            }
         } elseif ($action === 'oneblog_theme_restore') {
-            if (file_exists($backPath)) {
-                $str = file_get_contents($backPath);
+            if (!file_exists($backPath)) {
+                $ret = ['success'=>false, 'message'=>'未找到备份文件，无法恢复'];
+            } elseif (!is_readable($backPath)) {
+                $ret = ['success'=>false, 'message'=>'恢复失败，备份文件不可读，请检查 BackupSetting_OneBlog.txt 权限'];
+            } else {
+                $str = @file_get_contents($backPath);
+                if ($str === false) {
+                    echo json_encode(['success'=>false, 'message'=>'恢复失败，读取备份文件异常'], JSON_UNESCAPED_UNICODE);
+                    exit;
+                }
                 $updateThemeConQuery = $db->update('table.options')->rows(['value'=>$str])->where('name=?', 'theme:' . $theTheme);
                 $ok = $db->query($updateThemeConQuery);
                 $ret = $ok !== false
                     ? ['success'=>true, 'message'=>'恢复成功']
                     : ['success'=>false, 'message'=>'恢复失败，数据库操作异常'];
-            } else {
-                $ret = ['success'=>false, 'message'=>'未找到备份文件，无法恢复'];
             }
         }
         echo json_encode($ret);
@@ -560,7 +574,7 @@ function themeConfig($form) {
     $backPath = $absUploadDir . '/BackupSetting_' . $theTheme . '.txt';
 
     $themeConfStr = $db->fetchRow($db->select()->from('table.options')->where('name = ?', 'theme:' . $theTheme))['value'];
-    $backstr = file_exists($backPath) ? file_get_contents($backPath) : '';?>
+    $backstr = is_readable($backPath) ? @file_get_contents($backPath) : '';?>
 
     <link rel="stylesheet" href="https://cncdn.cc/oneblog/3.7.0/admin.css" type="text/css" />
     <script src="https://cncdn.cc/jquery/3.7.1/dist/jquery.min.js" type="text/javascript"></script>
