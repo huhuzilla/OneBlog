@@ -12,7 +12,7 @@
             夜间模式<input type="checkbox" id="night1" class="switchBtn"><label for="night1" class="switchBtn"></label>
         </div>
         <span>©<?php if (!empty($this->options->Webtime)): echo $this->options->Webtime().'-'; ?><?php endif; ?><?php echo date('Y'); ?>&nbsp;&nbsp;<a href="<?php echo $this->options->siteUrl; ?>"><?php echo $this->options->title; ?></a></span>
-        <span>Theme by <a id="copyright-m" href="https://docs.onenote.io" title="自豪地使用OneBlog主题" target="_blank">OneBlog</a></span>
+        <span>Theme by <a id="copyright-m" href="https://oneblog.023.me" title="自豪地使用OneBlog主题" target="_blank">OneBlog</a></span>
     </div>
 </div>
 

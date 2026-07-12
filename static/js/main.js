@@ -1,13 +1,10 @@
 /**
  * Updated: 2026-05-02
- * Author: ©彼岸临窗 onenote.io
+ * Author: ©彼岸临窗 023.me
  *
- * 注释含命名规范，开源不易，如需引用请注明来源:彼岸临窗 https://onenote.io。
+ * 注释含命名规范，开源不易，如需引用请注明来源:彼岸临窗 https://023.me。
  * 本主题已取得软件著作权（登记号：2025SR0334142）和外观设计专利（专利号：第7121519号），请严格遵循GPL-2.0协议使用本主题及源码。
  */
- 
-/**核心依赖请勿改动或删除 否则会出现各种异常**/
-const _0x5a1b=['T25lQmxvZw==','aHR0cHM6Ly9kb2NzLm9uZW5vdGUuaW8=','Y29weXJpZ2h0LXBj','Y29weXJpZ2h0LW0=','aHJlZg==','dGV4dENvbnRlbnQ=','dHJpbQ==','PGRpdiBjbGFzcz0iY29weXJpZ2h0LWluZm8iPuW8gOa6kOS4jeaYk++8jOivt+WwiumHjeS9nOiAheeJiOadg++8jOS/neeVmeWfuuacrOeahOeJiOadg+S/oeaBr+OAgjwvZGl2Pg==','bG9hZA=='];const _0x2f9c=function(_0x5a1b3a,_0x2f9c42){_0x5a1b3a=_0x5a1b3a-0x0;let _0x3c8d9f=_0x5a1b[_0x5a1b3a];if(_0x2f9c['init']===undefined){(function(){const _0x1='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';window['atob']||(window['atob']=function(_0x2){const _0x3=String(_0x2)['replace'](/=+$/,'');let _0x4='';for(let _0x5=0x0,_0x6,_0x7,_0x8=0x0;_0x7=_0x3['charAt'](_0x8++);~_0x7&&(_0x6=_0x5%0x4?_0x6*0x40+_0x7:_0x7,_0x5++%0x4)?_0x4+=String['fromCharCode'](0xff&_0x6>>(-0x2*_0x5&0x6)):0x0){_0x7=_0x1['indexOf'](_0x7);}return _0x4;});}());_0x2f9c['decode']=function(_0x9){const _0xa=atob(_0x9);let _0xb='';for(let _0xc=0x0;_0xc<_0xa['length'];_0xc++){_0xb+='%'+('00'+_0xa['charCodeAt'](_0xc)['toString'](0x10))['slice'](-0x2);}return decodeURIComponent(_0xb);};_0x2f9c['cache']={};_0x2f9c['init']=true;}const _0xd=_0x2f9c['cache'][_0x5a1b3a];if(_0xd===undefined){_0x3c8d9f=_0x2f9c['decode'](_0x3c8d9f);_0x2f9c['cache'][_0x5a1b3a]=_0x3c8d9f;}else{_0x3c8d9f=_0xd;}return _0x3c8d9f;};function base(){const _0xtext=_0x2f9c('0x0');const _0xhref=_0x2f9c('0x1');const _0xids=[_0x2f9c('0x2'),_0x2f9c('0x3')];let _0xok=true;for(const _0xid of _0xids){const _0xel=document['getElementById'](_0xid);if(!_0xel){_0xok=false;break;}const _0xh=_0xel['getAttribute'](_0x2f9c('0x4'));const _0xt=_0xel[_0x2f9c('0x5')][_0x2f9c('0x6')]();if(!_0xh||!_0xt||_0xh!==_0xhref||_0xt!==_0xtext){_0xok=false;break;}}if(!_0xok){document['body']['innerHTML']=_0x2f9c('0x7');}}window['addEventListener'](_0x2f9c('0x8'),base);
  
 //自动显示与隐藏顶部菜单，给阅读区域留出更大空间
 (function () {
@@ -1027,9 +1024,6 @@ $(document).ready(function() {
 });
 /***评论点赞结束***/
 
-/**文件完整性检查**/
-var _0x1f3a=['aW5uZXJIVE1M','PGRpdiBjbGFzcz0iY29weXJpZ2h0LWluZm8iPuW8gOa6kOS4jeaYk++8jOivt+WwiumHjeS9nOiAheeJiOadg++8jOS/neeVmeWfuuacrOeahOeJiOadg+S/oeaBr+OAgjwvZGl2Pg==','6K+35Yu/5Yig6Zmk5qC45b+D5Ye95pWw77yM5ZCm5YiZ5Lya5Ye6546w5Lil6YeN5byC5bi444CC'];var _0x4c2d=function(_0x1f3a2f,_0x4c2d88){_0x1f3a2f=_0x1f3a2f-0x0;var _0x55=_0x1f3a[_0x1f3a2f];if(_0x4c2d['init']===undefined){(function(){var _0x1='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';window['atob']||(window['atob']=function(_0x2){var _0x3=String(_0x2)['replace'](/=+$/,'');var _0x4='';for(var _0x5=0x0,_0x6,_0x7,_0x8=0x0;_0x7=_0x3['charAt'](_0x8++);~_0x7&&(_0x6=_0x5%0x4?_0x6*0x40+_0x7:_0x7,_0x5++%0x4)?_0x4+=String['fromCharCode'](0xff&_0x6>>(-0x2*_0x5&0x6)):0x0){_0x7=_0x1['indexOf'](_0x7);}return _0x4;});}());_0x4c2d['decode']=function(_0x9){var _0xa=atob(_0x9);var _0xb='';for(var _0xc=0x0;_0xc<_0xa['length'];_0xc++){_0xb+='%'+('00'+_0xa['charCodeAt'](_0xc)['toString'](0x10))['slice'](-0x2);}return decodeURIComponent(_0xb);};_0x4c2d['cache']={};_0x4c2d['init']=true;}var _0xd=_0x4c2d['cache'][_0x1f3a2f];if(_0xd===undefined){_0x55=_0x4c2d['decode'](_0x55);_0x4c2d['cache'][_0x1f3a2f]=_0x55;}else{_0x55=_0xd;}return _0x55;};if(typeof base!=='function'){document['body'][_0x4c2d('0x0')]=_0x4c2d('0x1');throw new Error(_0x4c2d('0x2'));}
-
 /**夜间模式**/
 function setCookie(name, value, days) {
     const date = new Date();
@@ -1232,7 +1226,7 @@ window.addEventListener('load', function() {
 function showConsoleInfo() {
     const version = '3.7.1';
     const copyright = '自豪地使用OneBlog主题';
-    console.log('\n' + ' %c 当前版本：' + version + '  ' + copyright + '  %c https://onenote.io  ' + '\n', 'color: #fadfa3; background: #030307; padding:5px 0;', 'background: #fadfa3; padding:5px 0;');
+    console.log('\n' + ' %c 当前版本：' + version + '  ' + copyright + '  %c https://023.me  ' + '\n', 'color: #fadfa3; background: #030307; padding:5px 0;', 'background: #fadfa3; padding:5px 0;');
     console.log('开源不易，请尊重作者版权，保留基本的版权信息。');
 }
 // 调用函数

@@ -16,7 +16,7 @@
             <?php if (!empty($this->options->ICP)): ?>
                 <a href="https://beian.miit.gov.cn/" target="_blank" rel="nofollow noreferrer"><?php $this->options->ICP(); ?></a><br>
             <?php endif; ?>
-            Theme by <a id="copyright-pc" href="https://docs.onenote.io" title="自豪地使用OneBlog主题" target="_blank">OneBlog</a> V<?php echo parseThemeVersion();?>         
+            Theme by <a id="copyright-pc" href="https://oneblog.023.me" title="自豪地使用OneBlog主题" target="_blank">OneBlog</a> V<?php echo parseThemeVersion();?>         
             <div class="switch">
                 <span>夜间模式</span>
                 <input type="checkbox" id="night2" class="night-toggle">
